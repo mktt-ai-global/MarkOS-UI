@@ -30,9 +30,10 @@
 
 ## GitHub Release
 
-- Create a new release from tag `vX.Y.Z`
-- Use [RELEASE_TEMPLATE.md](./RELEASE_TEMPLATE.md) as the starting body
-- Upload:
+- Push annotated tag `vX.Y.Z`
+- Confirm `.github/workflows/release.yml` completes successfully
+- Review the generated GitHub release notes and refine them with [RELEASE_TEMPLATE.md](./RELEASE_TEMPLATE.md) if you want a curated summary
+- Confirm these assets are attached to the release:
   - `release/MarkOS-UI-vX.Y.Z-source.tar.gz`
   - `release/MarkOS-UI-vX.Y.Z-source.zip`
   - `release/MarkOS-UI-vX.Y.Z-SHA256SUMS.txt`
@@ -41,6 +42,4 @@
 
 - Verify README install commands still point at the correct default branch
 - Verify raw `install.sh` download URL works
-- If GitHub Actions workflow support is available, move:
-  - `docs/github-actions-ci.yml.example`
-  - to `.github/workflows/ci.yml`
+- Verify the README badges reflect passing `CI` and `Release` workflow runs

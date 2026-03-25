@@ -1,13 +1,17 @@
-# Move this file to `.github/workflows/ci.yml` to enable GitHub Actions CI.
-# Some OAuth-based Git pushes do not have permission to create workflow files.
-
 name: CI
 
 on:
   push:
-    branches:
-      - main
+    tags-ignore:
+      - "v*"
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:

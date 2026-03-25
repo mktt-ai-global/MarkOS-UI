@@ -153,7 +153,6 @@ MarkOS UI deployment modes
 Template files:
   deploy/nginx/markos-ui.conf.template
   deploy/systemd/markos-openclaw-gateway.service.template
-  docs/github-actions-ci.yml.example
 EOF
 }
 
@@ -670,8 +669,6 @@ prepare_workspace() {
       --exclude='./release' \
       --exclude='./test-results' \
       --exclude='./.vite' \
-      --exclude='./openclaw-ui' \
-      --exclude='./个' \
       --exclude='./.DS_Store' \
       -cf - -C "$SOURCE_DIR" . | tar -xf - -C "$WORKSPACE_DIR"
   fi

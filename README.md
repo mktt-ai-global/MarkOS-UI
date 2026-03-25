@@ -6,7 +6,8 @@
   <p>
     <a href="https://github.com/mktt-ai-global/MarkOS-UI/stargazers"><img src="https://img.shields.io/github/stars/mktt-ai-global/MarkOS-UI?style=flat" alt="GitHub stars" /></a>
     <a href="https://github.com/mktt-ai-global/MarkOS-UI/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mktt-ai-global/MarkOS-UI" alt="License" /></a>
-    <img src="https://img.shields.io/badge/checks-local%20passing-2ea44f" alt="Local checks passing" />
+    <a href="https://github.com/mktt-ai-global/MarkOS-UI/actions/workflows/ci.yml"><img src="https://github.com/mktt-ai-global/MarkOS-UI/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+    <a href="https://github.com/mktt-ai-global/MarkOS-UI/actions/workflows/release.yml"><img src="https://github.com/mktt-ai-global/MarkOS-UI/actions/workflows/release.yml/badge.svg" alt="Release status" /></a>
     <img src="https://img.shields.io/badge/One--Click-Local%20%7C%20VPS%20%7C%20Docker-149eca" alt="One-click modes" />
     <img src="https://img.shields.io/badge/HTTPS-Let's%20Encrypt%20auto--renew-3c873a" alt="HTTPS auto-renew" />
   </p>
@@ -190,10 +191,12 @@ npm run package:release
 
 ## Release Workflow
 
-- Release body starter: [`docs/RELEASE_TEMPLATE.md`](./docs/RELEASE_TEMPLATE.md)
-- Release checklist: [`docs/RELEASE_CHECKLIST.md`](./docs/RELEASE_CHECKLIST.md)
-- Source packaging: `./scripts/package-release.sh HEAD vX.Y.Z`
-- Artifact checksums: `release/MarkOS-UI-vX.Y.Z-SHA256SUMS.txt`
+- Pull requests and branch pushes run [`ci.yml`](./.github/workflows/ci.yml)
+- Version tags like `vX.Y.Z` trigger [`release.yml`](./.github/workflows/release.yml)
+- Release notes can be refined with [`docs/RELEASE_TEMPLATE.md`](./docs/RELEASE_TEMPLATE.md)
+- Release steps are tracked in [`docs/RELEASE_CHECKLIST.md`](./docs/RELEASE_CHECKLIST.md)
+- Manual source packaging remains available via `./scripts/package-release.sh HEAD vX.Y.Z`
+- Artifact checksums are written to `release/MarkOS-UI-vX.Y.Z-SHA256SUMS.txt`
 
 ## Architecture
 
@@ -239,7 +242,8 @@ tests            Local logic coverage
 - `npm audit --omit=dev` passes locally.
 - `install.sh` now supports local, VPS, Docker, and config-only flows.
 - `install.sh` shows a deployment summary, preflight warnings, step-by-step progress, and troubleshooting hints.
-- `docs/github-actions-ci.yml.example` is included as a ready-to-enable CI workflow template.
+- GitHub Actions CI, tag-based release automation, issue templates, and PR templates are included.
+- `CONTRIBUTING.md` and `SECURITY.md` document contribution and vulnerability reporting expectations.
 
 ## License
 

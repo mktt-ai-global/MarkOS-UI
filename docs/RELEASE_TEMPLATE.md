@@ -1,6 +1,6 @@
 # GitHub Release Template
 
-Use this body when publishing a new GitHub release for MarkOS UI.
+Use this body when editing a GitHub release for MarkOS UI, whether the release was generated automatically from `.github/workflows/release.yml` or assembled manually.
 
 ## Title
 

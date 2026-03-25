@@ -5,6 +5,5 @@ node_modules
 dist
 release
 test-results
-openclaw-ui
-个
+coverage
 .DS_Store
