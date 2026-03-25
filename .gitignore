@@ -1,8 +1,19 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
 dist-ssr
+
+# Editor & OS
 *.local
 .DS_Store
 .vite
 *.log
+*.sw?
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Claude
 .claude/
