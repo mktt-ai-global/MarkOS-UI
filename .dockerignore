@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+.vite
+node_modules
+dist
+release
+test-results
+coverage
+deploy/generated
+.DS_Store
+.env
+.env.local
+*.log
+*.tgz
+*.zip

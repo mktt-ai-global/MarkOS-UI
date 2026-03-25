@@ -1,0 +1,39 @@
+# MarkOS UI — Docker Compose
+#
+# Quick start:
+#   1. cp .env.example .env
+#   2. Edit .env (at minimum, check MARKOS_UI_PORT)
+#   3. docker compose up -d
+#   4. Open http://localhost:4173 in your browser
+#
+# Stop:    docker compose down
+# Logs:    docker compose logs -f
+# Rebuild: docker compose up -d --build
+
+services:
+  markos-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: markos-ui:latest
+    container_name: markos-ui
+    restart: unless-stopped
+    ports:
+      - "${MARKOS_UI_PORT:-4173}:80"
+    environment:
+      # Where to find the OpenClaw gateway (see .env.example for details)
+      OPENCLAW_UPSTREAM_HOST: "${OPENCLAW_UPSTREAM_HOST:-host.docker.internal}"
+      OPENCLAW_UPSTREAM_PORT: "${OPENCLAW_UPSTREAM_PORT:-18789}"
+      # Nginx tuning (optional)
+      NGINX_CLIENT_MAX_BODY: "${NGINX_CLIENT_MAX_BODY:-16m}"
+      NGINX_WS_TIMEOUT: "${NGINX_WS_TIMEOUT:-300}"
+      NGINX_GZIP: "${NGINX_GZIP:-on}"
+    extra_hosts:
+      # Allows containers to reach services on the host machine
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
