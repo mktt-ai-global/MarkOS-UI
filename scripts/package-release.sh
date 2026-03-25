@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+export LC_ALL=C
+export LANG=C
+
 REF="${1:-HEAD}"
 VERSION="${2:-$(git describe --tags --always --dirty 2>/dev/null || git rev-parse --short "$REF")}"
 OUT_DIR="${3:-release}"

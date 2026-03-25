@@ -220,14 +220,207 @@ require_port() {
   validate_port "$value" || die "$label must be a valid port number. Received: $value"
 }
 
+mode_title() {
+  case "$1" in
+    local) printf '%s' 'Local Preview' ;;
+    vps) printf '%s' 'VPS Production' ;;
+    docker) printf '%s' 'Docker Deploy' ;;
+    config) printf '%s' 'Config Only' ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+mode_description() {
+  case "$1" in
+    local) printf '%s' 'Build locally and run a preview server with optional OpenClaw bootstrap.' ;;
+    vps) printf '%s' 'Deploy to a server with Nginx, systemd, HTTPS, and auto-renew certificates.' ;;
+    docker) printf '%s' 'Build and run a containerized frontend that proxies to an existing OpenClaw gateway.' ;;
+    config) printf '%s' 'Generate Nginx and systemd files only without modifying the host machine.' ;;
+    *) printf '%s' '' ;;
+  esac
+}
+
+source_hint() {
+  local project_root
+  project_root="$(find_project_root || true)"
+  if [ -n "$project_root" ]; then
+    printf '%s' "local project ($project_root)"
+  else
+    printf '%s' "GitHub archive (${REPO_SLUG}@${REPO_REF})"
+  fi
+}
+
+preview_workspace_dir() {
+  local default_install_dir="$1"
+  local project_root
+
+  if [ -n "${INSTALL_DIR:-}" ]; then
+    printf '%s' "$INSTALL_DIR"
+    return
+  fi
+
+  project_root="$(find_project_root || true)"
+  if [ -n "$project_root" ] && { [ "$project_root" = "$CURRENT_DIR" ] || [ "$project_root" = "$SCRIPT_DIR" ]; }; then
+    printf '%s' "$project_root"
+  else
+    printf '%s' "$default_install_dir"
+  fi
+}
+
+get_listening_process() {
+  local port="$1"
+
+  if command_exists lsof; then
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN 2> /dev/null | awk 'NR==2 {print $1 " (pid " $2 ")"}'
+    return
+  fi
+
+  if command_exists ss; then
+    ss -ltnp "( sport = :$port )" 2> /dev/null | awk 'NR==2 {print $NF}'
+    return
+  fi
+}
+
+warn_if_port_busy() {
+  local label="$1"
+  local port="$2"
+  local process_info
+
+  process_info="$(get_listening_process "$port" || true)"
+  if [ -n "$process_info" ]; then
+    warn "$label port $port is already in use by $process_info"
+  fi
+}
+
+lookup_public_ip() {
+  if command_exists curl; then
+    curl -fsS --max-time 3 https://api.ipify.org 2> /dev/null || true
+  fi
+}
+
+lookup_domain_ip() {
+  if command_exists getent; then
+    getent ahostsv4 "$DOMAIN" 2> /dev/null | awk 'NR==1 {print $1}'
+    return
+  fi
+
+  if command_exists dig; then
+    dig +short A "$DOMAIN" 2> /dev/null | awk 'NR==1 {print $1}'
+    return
+  fi
+
+  if command_exists host; then
+    host "$DOMAIN" 2> /dev/null | awk '/has address/ {print $NF; exit}'
+  fi
+}
+
+warn_about_dns_mismatch() {
+  local domain_ip public_ip
+
+  [ "$MODE" = "vps" ] || return
+  [ -n "$DOMAIN" ] || return
+
+  domain_ip="$(lookup_domain_ip || true)"
+  public_ip="$(lookup_public_ip || true)"
+
+  if [ -z "$domain_ip" ]; then
+    warn "Could not resolve $DOMAIN yet. Let's Encrypt issuance may fail until DNS is live."
+    return
+  fi
+
+  if [ -n "$public_ip" ] && [ "$domain_ip" != "$public_ip" ]; then
+    warn "$DOMAIN currently resolves to $domain_ip while this server appears to use $public_ip. Update DNS before running HTTPS issuance."
+  fi
+}
+
+warn_about_environment() {
+  case "$MODE" in
+    local)
+      warn_if_port_busy "UI" "$UI_PORT"
+      warn_if_port_busy "Gateway" "$GATEWAY_PORT"
+      ;;
+    vps)
+      warn_if_port_busy "HTTP" "$HTTP_PORT"
+      warn_if_port_busy "HTTPS" "$HTTPS_PORT"
+      warn_if_port_busy "Gateway" "$GATEWAY_PORT"
+      warn_about_dns_mismatch
+      ;;
+    docker)
+      warn_if_port_busy "Docker UI" "$UI_PORT"
+      ;;
+    config)
+      :
+      ;;
+  esac
+}
+
+show_execution_summary() {
+  local default_install_dir="$1"
+  local planned_workspace
+  local planned_source
+
+  planned_workspace="$(preview_workspace_dir "$default_install_dir")"
+  planned_source="$(source_hint)"
+
+  echo -e "${CYAN}Deployment plan${NC}"
+  echo -e "  ${GREEN}Mode:${NC} $(mode_title "$MODE")"
+  echo -e "  ${GREEN}Summary:${NC} $(mode_description "$MODE")"
+  echo -e "  ${GREEN}Source:${NC} $planned_source"
+  echo -e "  ${GREEN}Workspace:${NC} $planned_workspace"
+
+  case "$MODE" in
+    local)
+      echo -e "  ${GREEN}Bind host:${NC} $HOST"
+      echo -e "  ${GREEN}UI port:${NC} $UI_PORT"
+      echo -e "  ${GREEN}Gateway port:${NC} $GATEWAY_PORT"
+      echo -e "  ${GREEN}Open browser:${NC} $(bool_label "${OPEN_BROWSER:-0}")"
+      echo -e "  ${GREEN}OpenClaw bootstrap:${NC} $(bool_label "${INSTALL_OPENCLAW:-0}")"
+      ;;
+    vps)
+      echo -e "  ${GREEN}Domain:${NC} $DOMAIN"
+      echo -e "  ${GREEN}Gateway port:${NC} $GATEWAY_PORT"
+      echo -e "  ${GREEN}HTTP/HTTPS:${NC} ${HTTP_PORT}/${HTTPS_PORT}"
+      echo -e "  ${GREEN}HTTPS auto-renew:${NC} $(bool_label "${ENABLE_HTTPS:-1}")"
+      if [ -n "$EMAIL" ]; then
+        echo -e "  ${GREEN}Renewal email:${NC} $EMAIL"
+      fi
+      echo -e "  ${GREEN}System changes:${NC} nginx + certbot + systemd"
+      ;;
+    docker)
+      echo -e "  ${GREEN}UI port:${NC} $UI_PORT"
+      echo -e "  ${GREEN}OpenClaw upstream:${NC} ${DOCKER_UPSTREAM_HOST}:${GATEWAY_PORT}"
+      ;;
+    config)
+      echo -e "  ${GREEN}Domain:${NC} $DOMAIN"
+      echo -e "  ${GREEN}Gateway port:${NC} $GATEWAY_PORT"
+      echo -e "  ${GREEN}Config output:${NC} $OUTPUT_DIR"
+      ;;
+  esac
+
+  echo ""
+}
+
+confirm_execution() {
+  if [ "$INTERACTIVE" -eq 1 ]; then
+    prompt_yes_no "Continue with this plan?" "y" || die "Installation cancelled."
+  fi
+}
+
+bool_label() {
+  case "${1:-0}" in
+    1|y|Y|yes|YES|true|TRUE) printf '%s' 'enabled' ;;
+    *) printf '%s' 'disabled' ;;
+  esac
+}
+
 select_mode_interactive() {
   local choice=""
 
   echo "Choose an install mode:"
-  echo "  1. Local Preview"
-  echo "  2. VPS Production"
-  echo "  3. Docker Deploy"
-  echo "  4. Generate Config Only"
+  echo "  1. Local Preview    - $(mode_description local)"
+  echo "  2. VPS Production   - $(mode_description vps)"
+  echo "  3. Docker Deploy    - $(mode_description docker)"
+  echo "  4. Config Only      - $(mode_description config)"
   echo ""
 
   while true; do
@@ -504,8 +697,10 @@ maybe_install_openclaw_for_mode() {
       fi
       ;;
   esac
+}
 
-  if [ "$INSTALL_OPENCLAW" = "1" ]; then
+install_requested_openclaw() {
+  if [ "${INSTALL_OPENCLAW:-0}" = "1" ]; then
     ensure_openclaw
     ensure_openclaw_config
   fi
@@ -746,11 +941,15 @@ configure_config_mode() {
 
 run_local_mode() {
   INSTALL_DIR="${INSTALL_DIR:-$DEFAULT_LOCAL_INSTALL_DIR}"
+  configure_local_mode
+  maybe_install_openclaw_for_mode
+  show_execution_summary "$INSTALL_DIR"
+  warn_about_environment
+  confirm_execution
   prepare_workspace "$INSTALL_DIR"
   DIST_ROOT="$WORKSPACE_DIR/dist"
   ensure_node_and_npm
-  configure_local_mode
-  maybe_install_openclaw_for_mode
+  install_requested_openclaw
   build_ui
   maybe_start_gateway
 
@@ -768,10 +967,14 @@ run_local_mode() {
 
 run_vps_mode() {
   configure_vps_mode
+  maybe_install_openclaw_for_mode
+  show_execution_summary "$INSTALL_DIR"
+  warn_about_environment
+  confirm_execution
   prepare_workspace "$INSTALL_DIR"
   DIST_ROOT="$WORKSPACE_DIR/dist"
   ensure_node_and_npm
-  maybe_install_openclaw_for_mode
+  install_requested_openclaw
   build_ui
   install_vps_packages
   configure_nginx_site
@@ -791,6 +994,9 @@ run_vps_mode() {
 
 run_docker_mode() {
   configure_docker_mode
+  show_execution_summary "$INSTALL_DIR"
+  warn_about_environment
+  confirm_execution
   prepare_workspace "$INSTALL_DIR"
   DIST_ROOT="$WORKSPACE_DIR/dist"
   command_exists docker || die "Docker is required for Docker mode."
@@ -811,6 +1017,8 @@ run_docker_mode() {
 
 run_config_mode() {
   configure_config_mode
+  show_execution_summary "$INSTALL_DIR"
+  confirm_execution
   prepare_source_dir
   WORKSPACE_DIR="$SOURCE_DIR"
   DIST_ROOT="$INSTALL_DIR/dist"

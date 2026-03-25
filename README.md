@@ -175,6 +175,12 @@ npm run docker:up
 npm run package:release
 ```
 
+## Release Workflow
+
+- Release body starter: [`docs/RELEASE_TEMPLATE.md`](./docs/RELEASE_TEMPLATE.md)
+- Release checklist: [`docs/RELEASE_CHECKLIST.md`](./docs/RELEASE_CHECKLIST.md)
+- Source packaging: `./scripts/package-release.sh HEAD vX.Y.Z`
+
 ## Architecture
 
 ```mermaid
