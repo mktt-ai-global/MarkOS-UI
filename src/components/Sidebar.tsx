@@ -46,7 +46,7 @@ export default function Sidebar() {
               aria-label={label}
             >
               <Icon size={20} strokeWidth={1.8} />
-              <span className="absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-[#1d1d1f]/90 text-white text-xs font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">
+              <span className="absolute left-full ml-3 px-2.5 py-1 rounded-lg bg-[var(--color-tooltip-bg)] text-[var(--color-tooltip-text)] text-xs font-medium whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">
                 {label}
               </span>
             </NavLink>

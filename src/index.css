@@ -23,6 +23,10 @@
   --color-danger: #ff3b30;
   --color-info: #5ac8fa;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  --color-tooltip-bg: rgba(29, 29, 31, 0.9);
+  --color-tooltip-text: #ffffff;
+  --color-code-bg: #0f172a;
+  --color-code-text: #e2e8f0;
   --color-bg-start: #f5f5f7;
   --color-bg-mid: #e8e8ed;
   --color-bg-end: #f0f0f5;
@@ -71,6 +75,10 @@ html[data-ui-theme='midnight'] {
   --color-warning: #fbbf24;
   --color-danger: #f87171;
   --color-info: #60a5fa;
+  --color-tooltip-bg: rgba(51, 65, 85, 0.92);
+  --color-tooltip-text: #e2e8f0;
+  --color-code-bg: #020617;
+  --color-code-text: #cbd5e1;
   --color-bg-start: #020617;
   --color-bg-mid: #0f172a;
   --color-bg-end: #111827;
@@ -94,6 +102,9 @@ html[data-ui-theme='midnight'] {
   .text-warning { color: var(--color-warning); }
   .text-danger { color: var(--color-danger); }
   .text-info { color: var(--color-info); }
+  .bg-success { background-color: var(--color-success); }
+  .bg-warning { background-color: var(--color-warning); }
+  .bg-info { background-color: var(--color-info); }
 }
 
 @layer components {

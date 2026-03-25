@@ -552,7 +552,7 @@ export default function Settings() {
                             </div>
                           </div>
 
-                          <pre className="rounded-xl bg-[#0f172a] text-slate-100 p-3 text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
+                          <pre className="rounded-xl bg-[var(--color-code-bg)] text-[var(--color-code-text)] p-3 text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
                             {patchJson}
                           </pre>
 

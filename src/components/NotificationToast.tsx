@@ -45,7 +45,7 @@ export default function NotificationToast({ notifications, onDismiss }: Props) {
             </div>
             <button
               onClick={() => onDismiss(n.id)}
-              className="w-5 h-5 rounded-md hover:bg-black/5 flex items-center justify-center flex-shrink-0"
+              className="w-5 h-5 rounded-md hover:bg-[var(--color-glass-subtle)] flex items-center justify-center flex-shrink-0"
             >
               <X size={12} className="text-text-tertiary" />
             </button>

@@ -1,8 +1,8 @@
 {
-  "name": "openclaw-ui",
+  "name": "markos-ui",
   "private": true,
   "version": "1.0.0",
-  "description": "Control surface for the OpenClaw agent orchestration system",
+  "description": "Agent Operating System UI for OpenClaw — Build, Monitor, and Orchestrate AI Agents Visually",
   "license": "MIT",
   "type": "module",
   "scripts": {

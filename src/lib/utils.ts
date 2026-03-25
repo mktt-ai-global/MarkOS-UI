@@ -3,9 +3,16 @@ export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** Check whether localStorage / sessionStorage is available. */
+/** Check whether localStorage is available and functional. */
 export function canUseStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+  try {
+    const testKey = '__openclaw_storage_test__'
+    window.localStorage.setItem(testKey, '1')
+    window.localStorage.removeItem(testKey)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /** Split a multi-line string into trimmed, non-empty lines. */

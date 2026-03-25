@@ -1,72 +1,140 @@
-# OpenClaw UI
+# MarkOS UI — Agent Operating System
 
-OpenClaw UI is a React + Vite control surface for browsing OpenClaw state, preparing local agent and skill templates, and previewing gateway-driven workflows before a live runtime is fully wired.
+> Build, Monitor, and Orchestrate AI Agents — Visually
+>
+> 可视化构建、监控与编排 AI Agents 的操作系统级 UI
 
-## Current Status
+<!-- Add cover.png here -->
 
-- The UI shell, routing, template studio, chat preview, cron preview, devices, approvals, and settings draft workflow are implemented.
-- `npm run lint` and `npm run build` currently pass.
-- Several runtime write actions still require a real local OpenClaw install before they can be safely validated.
+---
 
-## Scripts
+## What is this? | 这是什么？
 
-- `npm run dev`: start the Vite development server
-- `npm run build`: run TypeScript build and create a production bundle
-- `npm run lint`: run ESLint across the project
-- `npm run test`: run the lightweight Node-based unit tests for local logic
-- `npm run preview`: serve the built bundle locally
+MarkOS UI is not just a dashboard — it is a **control surface for an Agent Operating System**.
 
-## Main Areas
+It provides a visual interface to build, deploy, monitor, and orchestrate autonomous AI agents running on the [OpenClaw](https://github.com/mktt-ai-global) runtime. Think of it as the cockpit for your agent fleet.
 
-- `src/pages/Dashboard.tsx`: gateway and snapshot overview
-- `src/pages/Agents.tsx`: live agent visibility plus local template workflow
-- `src/pages/Skills.tsx`: live skill visibility plus local template workflow
-- `src/pages/Chat.tsx`: session history, offline template sessions, and live monitor scaffolding
-- `src/pages/Cron.tsx`: scheduled job preview and local run history
-- `src/pages/Devices.tsx`: browser device visibility and pairing scaffolding
-- `src/pages/Approvals.tsx`: approval queue scaffolding
-- `src/pages/Settings.tsx`: connection settings and config draft studio
-- `src/lib/openclaw-client.ts`: WebSocket gateway client and connection logic
-- `src/lib/template-studio.ts`: template import, questionnaire mapping, and artifact generation
+MarkOS UI 不只是一个仪表盘，而是一个 **Agent 操作系统的控制台**。它提供了可视化界面来构建、部署、监控和编排运行在 OpenClaw 运行时上的自主 AI Agent。
 
-## Template Import
+---
 
-The Template Studio supports:
+## Features | 核心功能
 
-- questionnaire-based creation
-- `.md`, `.txt`, `.json`, `.yaml`, `.yml`, and `.rtf` best-effort import
-- generated artifact preview
-- single-file pack export
-- pack re-import with questionnaire snapshot restore
-- local template persistence in browser storage
+- **Dashboard** — System metrics, agent activity overview, and real-time health monitoring with interactive charts
+- **Agent Management** — View live agents, create agent templates with questionnaire-based workflows, import/export agent packs
+- **Skills Library** — Browse, create, and manage agent skills and tool templates with import/export support
+- **Chat Interface** — Session history, offline template sessions, and live agent interaction monitor
+- **Cron Scheduling** — Scheduled job management with preview and local run history
+- **Device Management** — Browser device visibility, pairing scaffolding, and node management
+- **Approval Workflows** — Approval queue for agent actions that require human review
+- **Terminal Console** — Built-in terminal overlay for direct system interaction
+- **Settings & Themes** — Gateway connection config, two visual themes (Frost light / Midnight dark) with frosted glass design
+- **Template Studio** — Import `.md`, `.txt`, `.json`, `.yaml`, `.yml`, `.rtf` files; questionnaire-based creation; artifact preview; single-file pack export and re-import
+- **Notifications** — Real-time toast notifications with history tracking for gateway events
+- **Responsive Layout** — Full mobile support with bottom tab navigation and desktop sidebar
 
-## Known Limits
+---
 
-- Runtime install, activation, and destructive write actions remain gated until a real OpenClaw gateway is available locally.
-- The automated tests currently focus on pure local logic such as template import/export, adapters, and draft storage.
-- Dashboard-derived charts are still UI estimates unless the gateway exposes a matching snapshot field.
+## Quick Start | 快速开始
 
-## Installer
+```bash
+git clone https://github.com/mktt-ai-global/MarkOS-UI.git
+cd MarkOS-UI
+npm install
+npm run dev
+```
 
-`install.sh` checks Node/OpenClaw, builds the app, starts the gateway if needed, and serves the built UI with `vite preview`.
+Open: [http://localhost:5173](http://localhost:5173)
 
-## Deployment
+> No OpenClaw gateway? No problem — the UI runs with built-in mock data so you can explore every page immediately.
+>
+> 没有 OpenClaw 网关？没关系 — UI 内置了模拟数据，你可以立即浏览每个页面。
 
-To deploy OpenClaw UI on a VPS or production server:
+---
 
-1. **Build the UI** on the server (or copy the `dist/` folder from a local build):
-   ```bash
-   npm ci && npm run build
-   ```
+## One-Command Deployment | 一键部署
 
-2. **Run the deploy guide** for detailed Nginx and systemd configuration:
-   ```bash
-   ./install.sh --deploy-guide
-   ```
-   This prints a complete Nginx reverse proxy config (with SPA fallback and WebSocket proxy) and a systemd service file for the OpenClaw gateway.
+```bash
+./install.sh
+```
 
-3. **Enable HTTPS** — strongly recommended for production. Use [certbot](https://certbot.eff.org/) with Let's Encrypt:
-   ```bash
-   sudo certbot --nginx -d your-domain.com
-   ```
-   Certbot will configure TLS and set up automatic certificate renewal.
+The installer performs the following steps:
+
+1. Checks prerequisites (Node.js 22+, npm)
+2. Installs or detects OpenClaw globally
+3. Runs OpenClaw onboarding if no configuration exists
+4. Installs UI dependencies (`npm install`)
+5. Builds the production bundle (`npm run build`)
+6. Starts the OpenClaw gateway (if not already running) and serves the built UI
+
+For VPS/production deployment with Nginx reverse proxy and systemd service configuration:
+
+```bash
+./install.sh --deploy-guide
+```
+
+This prints a complete deployment guide including Nginx config (with SPA fallback and WebSocket proxy), systemd service file, and HTTPS setup with Let's Encrypt.
+
+---
+
+## Architecture | 系统架构
+
+```
+MarkOS UI (React + Vite)
+   |
+   | WebSocket / HTTP
+   v
+OpenClaw Gateway (:18789)
+   |
+   v
+Orchestrator
+   |
+   v
+Agents  <-->  Skills / Tools
+```
+
+The UI communicates with the OpenClaw gateway over WebSocket for real-time events and HTTP for REST operations. When no gateway is available, all pages fall back to local mock data and template workflows stored in browser storage.
+
+---
+
+## Tech Stack | 技术栈
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | React 19 + TypeScript |
+| Build | Vite 8 |
+| Styling | Tailwind CSS 4 |
+| Routing | React Router 7 |
+| Charts | Recharts 3 |
+| Animations | Framer Motion |
+| Icons | Lucide React |
+| Design | Frosted glass (Apple-inspired, light/dark themes) |
+
+---
+
+## Scripts | 可用脚本
+
+```bash
+npm run dev        # Start development server
+npm run build      # TypeScript check + production build
+npm run preview    # Serve the built bundle locally
+npm run lint       # Run ESLint
+npm run test       # Run unit tests
+npm run check      # Lint + test + build (CI)
+```
+
+---
+
+## Vision | 愿景
+
+We are building toward a future where AI agents collaborate like teams — where workflows evolve autonomously, systems observe and improve themselves, and the human operator has full visibility and control through a single pane of glass.
+
+MarkOS UI is the first step: giving you the operating system interface to make that future manageable, observable, and beautiful.
+
+我们正在构建一个未来：AI Agent 像团队一样协作，工作流自主进化，系统自我观察和改进，而人类操作者通过一块玻璃面板拥有全面的可见性和控制力。MarkOS UI 是第一步。
+
+---
+
+## License | 许可证
+
+[MIT](LICENSE)

@@ -423,7 +423,7 @@ export default function TemplateStudio({
                   onClick={() => setEntryMode(id as EntryMode)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     entryMode === id
-                      ? 'bg-white text-text-primary shadow-sm'
+                      ? 'bg-[var(--color-glass-bg)] text-text-primary shadow-sm'
                       : 'text-text-secondary hover:text-text-primary'
                   }`}
                 >
@@ -465,7 +465,7 @@ export default function TemplateStudio({
               <div className="text-[10px] text-text-tertiary">
                 支持 `.md / .txt / .json / .yaml / .yml / .rtf`。导入会做 best-effort 解析，并同步更新问卷字段。
               </div>
-              <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 text-sm text-text-primary cursor-pointer hover:bg-white transition-colors w-fit">
+              <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--color-glass-bg)] text-sm text-text-primary cursor-pointer hover:bg-[var(--color-glass-hover)] transition-colors w-fit">
                 <FileUp size={16} className="text-accent" />
                 <span>{importFileName || 'Choose Template File'}</span>
                 <input
@@ -482,7 +482,7 @@ export default function TemplateStudio({
               {importSourceText && (
                 <div className="space-y-2">
                   <div className="text-[11px] font-medium text-text-primary">Imported Source Preview</div>
-                  <pre className="max-h-72 overflow-auto rounded-xl bg-black/5 p-3 text-[11px] text-text-secondary whitespace-pre-wrap break-words">
+                  <pre className="max-h-72 overflow-auto rounded-xl bg-[var(--color-glass-subtle)] p-3 text-[11px] text-text-secondary whitespace-pre-wrap break-words">
                     {importSourceText}
                   </pre>
                 </div>
@@ -521,7 +521,7 @@ export default function TemplateStudio({
             <button
               onClick={handleDownloadPack}
               disabled={artifacts.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/70 text-text-secondary text-xs font-medium hover:text-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--color-glass-bg)] text-text-secondary text-xs font-medium hover:text-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Download size={14} />
               Download Pack
@@ -529,7 +529,7 @@ export default function TemplateStudio({
             <button
               onClick={handleCopySelected}
               disabled={!selectedArtifact}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/70 text-text-secondary text-xs font-medium hover:text-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--color-glass-bg)] text-text-secondary text-xs font-medium hover:text-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Copy size={14} />
               Copy Selected
@@ -537,7 +537,7 @@ export default function TemplateStudio({
             <button
               onClick={handleDownloadSelected}
               disabled={!selectedArtifact}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/70 text-text-secondary text-xs font-medium hover:text-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--color-glass-bg)] text-text-secondary text-xs font-medium hover:text-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Download size={14} />
               Download Selected
@@ -569,11 +569,11 @@ export default function TemplateStudio({
           <div className="space-y-3">
             {selectedArtifact && (
               <>
-                <div className="rounded-2xl px-3 py-2 bg-white/70">
+                <div className="rounded-2xl px-3 py-2 bg-[var(--color-glass-bg)]">
                   <div className="text-xs font-medium text-text-primary">{selectedArtifact.label}</div>
                   <div className="text-[10px] text-text-tertiary mt-1">{selectedArtifact.description}</div>
                 </div>
-                <pre className="min-h-[280px] rounded-2xl bg-black/5 p-4 text-[11px] text-text-primary overflow-auto whitespace-pre-wrap break-words">
+                <pre className="min-h-[280px] rounded-2xl bg-[var(--color-glass-subtle)] p-4 text-[11px] text-text-primary overflow-auto whitespace-pre-wrap break-words">
                   {selectedArtifact.content}
                 </pre>
               </>
