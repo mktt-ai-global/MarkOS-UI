@@ -28,6 +28,7 @@ The installer opens an interactive menu and lets you choose:
 - host and UI port
 - OpenClaw gateway port
 - whether to bootstrap OpenClaw for live mode
+- a final deployment summary before any changes are made
 
 ### VPS production deploy
 
@@ -45,6 +46,7 @@ VPS mode is designed for public deployment and will:
 - enable `certbot.timer` for automatic certificate renewal
 
 If you use interactive mode, the installer also includes built-in prompts for domain and port configuration.
+Before execution, it prints a step-by-step deployment plan, warns about busy ports or DNS mismatches when it can detect them, and shows maintenance commands after completion.
 
 ### Docker deploy
 
@@ -109,6 +111,17 @@ The new installer includes an interactive menu with configurable deployment inpu
 - `Docker upstream host`
 
 For production HTTPS with automatic Let's Encrypt renewal, the installer normalizes to ports `80/443`, because that is the most reliable setup for certificate issuance and renewal.
+
+## Post-Deploy Verification
+
+After the installer completes, it prints mode-specific maintenance commands. The most useful checks are:
+
+- Local: `openclaw status`
+- VPS: `sudo systemctl status nginx --no-pager`
+- VPS: `sudo systemctl status markos-openclaw-gateway.service --no-pager`
+- VPS: `sudo certbot renew --dry-run`
+- Docker: `docker compose ps`
+- Docker: `docker compose logs -f`
 
 ## CLI Examples
 
@@ -180,6 +193,7 @@ npm run package:release
 - Release body starter: [`docs/RELEASE_TEMPLATE.md`](./docs/RELEASE_TEMPLATE.md)
 - Release checklist: [`docs/RELEASE_CHECKLIST.md`](./docs/RELEASE_CHECKLIST.md)
 - Source packaging: `./scripts/package-release.sh HEAD vX.Y.Z`
+- Artifact checksums: `release/MarkOS-UI-vX.Y.Z-SHA256SUMS.txt`
 
 ## Architecture
 
@@ -224,6 +238,7 @@ tests            Local logic coverage
 - `npm run check` passes locally.
 - `npm audit --omit=dev` passes locally.
 - `install.sh` now supports local, VPS, Docker, and config-only flows.
+- `install.sh` shows a deployment summary, preflight warnings, step-by-step progress, and troubleshooting hints.
 - `docs/github-actions-ci.yml.example` is included as a ready-to-enable CI workflow template.
 
 ## License

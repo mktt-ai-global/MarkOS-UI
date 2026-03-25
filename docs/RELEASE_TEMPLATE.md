@@ -37,9 +37,10 @@ docker compose up -d --build
 ## Included in this release
 
 - Updated installer flow with deployment summary and confirmation page
+- Step-by-step installer progress with troubleshooting hints and maintenance commands
 - Nginx and systemd deployment templates
 - Dockerfile and `docker-compose.yml`
-- Release packaging script
+- Release packaging script with SHA256 checksum output
 - Refined GitHub-facing README
 
 ## Verification
@@ -48,6 +49,7 @@ docker compose up -d --build
 - `npm audit --omit=dev`
 - `./install.sh --mode config --non-interactive ...`
 - `./scripts/package-release.sh HEAD <version>`
+- Verify `release/MarkOS-UI-<version>-SHA256SUMS.txt`
 
 ## Notes
 

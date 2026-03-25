@@ -15,6 +15,8 @@
 - Run:
   - `./scripts/package-release.sh HEAD vX.Y.Z`
 - Confirm both files exist in `release/`
+- Confirm the checksum file exists:
+  - `release/MarkOS-UI-vX.Y.Z-SHA256SUMS.txt`
 - Record SHA256 checksums for the release body if needed
 
 ## Git steps
@@ -33,6 +35,7 @@
 - Upload:
   - `release/MarkOS-UI-vX.Y.Z-source.tar.gz`
   - `release/MarkOS-UI-vX.Y.Z-source.zip`
+  - `release/MarkOS-UI-vX.Y.Z-SHA256SUMS.txt`
 
 ## Post-release
 

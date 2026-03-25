@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -Eeuo pipefail
 
 APP_NAME="MarkOS UI"
 REPO_SLUG="${MARKOS_REPO_SLUG:-mktt-ai-global/MarkOS-UI}"
@@ -38,6 +38,10 @@ ENABLE_HTTPS=""
 INSTALL_OPENCLAW=""
 OPEN_BROWSER=""
 DOCKER_UPSTREAM_HOST="host.docker.internal"
+GATEWAY_PID=""
+CURRENT_STEP="initialization"
+STEP_INDEX=0
+STEP_TOTAL=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CURRENT_DIR="$(pwd)"
@@ -55,7 +59,7 @@ cleanup() {
   fi
 }
 
-trap cleanup EXIT
+trap 'cleanup_gateway; cleanup' EXIT
 
 print_banner() {
   echo ""
@@ -219,6 +223,73 @@ require_port() {
   local value="$2"
   validate_port "$value" || die "$label must be a valid port number. Received: $value"
 }
+
+set_step_total() {
+  STEP_TOTAL="$1"
+  STEP_INDEX=0
+}
+
+step() {
+  STEP_INDEX=$((STEP_INDEX + 1))
+  CURRENT_STEP="$1"
+  echo ""
+  echo -e "${CYAN}Step ${STEP_INDEX}/${STEP_TOTAL}${NC} ${CURRENT_STEP}"
+}
+
+show_failure_hints() {
+  echo ""
+  echo -e "${YELLOW}Troubleshooting hints${NC}"
+
+  case "$MODE" in
+    local)
+      echo "  - Verify Node.js 22+ with: node -v"
+      echo "  - Check whether the UI port is already in use: lsof -nP -iTCP:${UI_PORT} -sTCP:LISTEN"
+      echo "  - Re-run the preview manually from the workspace: npm run preview -- --host ${HOST} --port ${UI_PORT}"
+      if [ "${INSTALL_OPENCLAW:-0}" = "1" ]; then
+        echo "  - Check OpenClaw health with: openclaw status"
+      fi
+      ;;
+    vps)
+      echo "  - Check Nginx status: sudo systemctl status nginx --no-pager"
+      echo "  - Check gateway service: sudo systemctl status markos-openclaw-gateway.service --no-pager"
+      echo "  - Inspect gateway logs: sudo journalctl -u markos-openclaw-gateway.service -n 100 --no-pager"
+      if [ "${ENABLE_HTTPS:-1}" = "1" ]; then
+        echo "  - Confirm DNS for ${DOMAIN} points to this server before retrying cert issuance."
+        echo "  - Re-test renewal later with: sudo certbot renew --dry-run"
+      fi
+      ;;
+    docker)
+      echo "  - Inspect the stack: docker compose ps"
+      echo "  - Tail container logs: docker compose logs -f"
+      echo "  - Stop the stack if needed: docker compose down"
+      ;;
+    config)
+      echo "  - Verify the output directory is writable: ${OUTPUT_DIR}"
+      echo "  - Re-run config generation with: ./install.sh --mode config --domain ${DOMAIN} --gateway-port ${GATEWAY_PORT}"
+      ;;
+  esac
+}
+
+on_error() {
+  local exit_code="$?"
+
+  if [ "$exit_code" -eq 130 ]; then
+    echo ""
+    warn "Installation interrupted by user."
+    exit 130
+  fi
+
+  echo ""
+  echo -e "${RED}Deployment stopped during:${NC} ${CURRENT_STEP}" >&2
+  if [ -n "${WORKSPACE_DIR:-}" ]; then
+    echo -e "${RED}Workspace:${NC} ${WORKSPACE_DIR}" >&2
+  fi
+  show_failure_hints >&2
+
+  exit "$exit_code"
+}
+
+trap on_error ERR
 
 mode_title() {
   case "$1" in
@@ -706,6 +777,10 @@ install_requested_openclaw() {
   fi
 }
 
+require_openclaw_binary() {
+  command_exists openclaw || die "OpenClaw CLI is required for this mode. Install it first or rerun without --no-openclaw."
+}
+
 maybe_start_gateway() {
   if [ "$INSTALL_OPENCLAW" != "1" ]; then
     return
@@ -733,6 +808,40 @@ cleanup_gateway() {
     warn "Stopping temporary OpenClaw gateway..."
     kill "$GATEWAY_PID" > /dev/null 2>&1 || true
   fi
+}
+
+show_next_steps() {
+  echo -e "${CYAN}Next steps${NC}"
+
+  case "$MODE" in
+    local)
+      echo "  - Keep this terminal open while the preview server is running."
+      echo "  - Re-open the UI at: http://${HOST}:${UI_PORT}"
+      if [ "${INSTALL_OPENCLAW:-0}" = "1" ]; then
+        echo "  - Verify gateway status with: openclaw status"
+      fi
+      ;;
+    vps)
+      echo "  - Verify Nginx: sudo systemctl status nginx --no-pager"
+      echo "  - Verify gateway: sudo systemctl status markos-openclaw-gateway.service --no-pager"
+      echo "  - Review gateway logs: sudo journalctl -u markos-openclaw-gateway.service -n 100 --no-pager"
+      if [ "${ENABLE_HTTPS:-1}" = "1" ]; then
+        echo "  - Test certificate renewal: sudo certbot renew --dry-run"
+      fi
+      ;;
+    docker)
+      echo "  - Inspect containers: docker compose ps"
+      echo "  - Tail logs: docker compose logs -f"
+      echo "  - Stop the stack: docker compose down"
+      ;;
+    config)
+      echo "  - Review the generated files before copying them into /etc."
+      echo "  - Nginx file: ${OUTPUT_DIR}/nginx/${SITE_NAME}.conf"
+      echo "  - Systemd file: ${OUTPUT_DIR}/systemd/markos-openclaw-gateway.service"
+      ;;
+  esac
+
+  echo ""
 }
 
 open_url() {
@@ -946,14 +1055,23 @@ run_local_mode() {
   show_execution_summary "$INSTALL_DIR"
   warn_about_environment
   confirm_execution
+  set_step_total $((4 + (${INSTALL_OPENCLAW:-0} == 1 ? 2 : 0)))
+  step "Preparing workspace"
   prepare_workspace "$INSTALL_DIR"
   DIST_ROOT="$WORKSPACE_DIR/dist"
+  step "Verifying Node.js and npm"
   ensure_node_and_npm
+  if [ "${INSTALL_OPENCLAW:-0}" = "1" ]; then
+    step "Installing or verifying OpenClaw"
+  fi
   install_requested_openclaw
+  step "Building the frontend bundle"
   build_ui
+  if [ "${INSTALL_OPENCLAW:-0}" = "1" ]; then
+    step "Ensuring the OpenClaw gateway is reachable"
+  fi
   maybe_start_gateway
-
-  trap 'cleanup_gateway; cleanup' EXIT INT TERM
+  step "Starting the local preview server"
 
   echo ""
   echo -e "${CYAN}Local preview is ready${NC}"
@@ -961,6 +1079,7 @@ run_local_mode() {
   echo -e "  ${GREEN}Gateway:${NC} http://127.0.0.1:${GATEWAY_PORT}"
   echo ""
 
+  show_next_steps
   open_url "http://${HOST}:${UI_PORT}"
   npm run preview -- --host "$HOST" --port "$UI_PORT"
 }
@@ -971,16 +1090,28 @@ run_vps_mode() {
   show_execution_summary "$INSTALL_DIR"
   warn_about_environment
   confirm_execution
+  set_step_total $((6 + (${INSTALL_OPENCLAW:-0} == 1 ? 1 : 0) + (${ENABLE_HTTPS:-1} == 1 ? 1 : 0)))
+  step "Preparing deployment workspace"
   prepare_workspace "$INSTALL_DIR"
   DIST_ROOT="$WORKSPACE_DIR/dist"
+  step "Verifying Node.js and npm"
   ensure_node_and_npm
+  if [ "${INSTALL_OPENCLAW:-0}" = "1" ]; then
+    step "Installing or verifying OpenClaw"
+  fi
   install_requested_openclaw
+  require_openclaw_binary
+  step "Building the frontend bundle"
   build_ui
+  step "Installing Nginx and certbot"
   install_vps_packages
+  step "Configuring Nginx"
   configure_nginx_site
+  step "Installing the OpenClaw gateway service"
   configure_gateway_service
 
   if [ "${ENABLE_HTTPS:-1}" = "1" ]; then
+    step "Issuing HTTPS certificates and enabling auto-renew"
     enable_https_with_certbot
   fi
 
@@ -990,6 +1121,8 @@ run_vps_mode() {
   echo -e "  ${GREEN}Domain:${NC} https://${DOMAIN}"
   echo -e "  ${GREEN}Gateway service:${NC} markos-openclaw-gateway.service"
   echo ""
+
+  show_next_steps
 }
 
 run_docker_mode() {
@@ -997,11 +1130,15 @@ run_docker_mode() {
   show_execution_summary "$INSTALL_DIR"
   warn_about_environment
   confirm_execution
+  set_step_total 3
+  step "Preparing workspace"
   prepare_workspace "$INSTALL_DIR"
   DIST_ROOT="$WORKSPACE_DIR/dist"
+  step "Verifying Docker and Docker Compose"
   command_exists docker || die "Docker is required for Docker mode."
   docker compose version > /dev/null 2>&1 || die "Docker Compose v2 is required for Docker mode."
 
+  step "Building and starting the Docker stack"
   info "Building and starting the Docker stack..."
   MARKOS_UI_PORT="$UI_PORT" \
   OPENCLAW_UPSTREAM_HOST="$DOCKER_UPSTREAM_HOST" \
@@ -1013,15 +1150,20 @@ run_docker_mode() {
   echo -e "  ${GREEN}UI:${NC} http://127.0.0.1:${UI_PORT}"
   echo -e "  ${GREEN}OpenClaw upstream:${NC} http://${DOCKER_UPSTREAM_HOST}:${GATEWAY_PORT}"
   echo ""
+
+  show_next_steps
 }
 
 run_config_mode() {
   configure_config_mode
   show_execution_summary "$INSTALL_DIR"
   confirm_execution
+  set_step_total 2
+  step "Loading source templates"
   prepare_source_dir
   WORKSPACE_DIR="$SOURCE_DIR"
   DIST_ROOT="$INSTALL_DIR/dist"
+  step "Rendering deployment files"
   mkdir -p "$OUTPUT_DIR/nginx" "$OUTPUT_DIR/systemd"
 
   render_template "$WORKSPACE_DIR/deploy/nginx/markos-ui.conf.template" "$OUTPUT_DIR/nginx/${SITE_NAME}.conf"
@@ -1032,6 +1174,8 @@ run_config_mode() {
   echo -e "  ${GREEN}Nginx:${NC} $OUTPUT_DIR/nginx/${SITE_NAME}.conf"
   echo -e "  ${GREEN}Systemd:${NC} $OUTPUT_DIR/systemd/markos-openclaw-gateway.service"
   echo ""
+
+  show_next_steps
 }
 
 main() {

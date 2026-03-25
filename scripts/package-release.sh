@@ -13,13 +13,16 @@ mkdir -p "$OUT_DIR"
 
 tarball="${OUT_DIR}/MarkOS-UI-${VERSION}-source.tar.gz"
 zipball="${OUT_DIR}/MarkOS-UI-${VERSION}-source.zip"
+checksum_file="${OUT_DIR}/MarkOS-UI-${VERSION}-SHA256SUMS.txt"
 
-rm -f "$tarball" "$zipball"
+rm -f "$tarball" "$zipball" "$checksum_file"
 
 git archive --format=tar.gz --output="$tarball" "$REF"
 git archive --format=zip --output="$zipball" "$REF"
+shasum -a 256 "$tarball" "$zipball" > "$checksum_file"
 
 echo "Created:"
 echo "  $tarball"
 echo "  $zipball"
-shasum -a 256 "$tarball" "$zipball"
+echo "  $checksum_file"
+cat "$checksum_file"
