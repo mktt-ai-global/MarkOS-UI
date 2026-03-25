@@ -1,0 +1,13 @@
+services:
+  markos-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: markos-ui:latest
+    ports:
+      - "${MARKOS_UI_PORT:-4173}:80"
+    environment:
+      OPENCLAW_UPSTREAM_HOST: "${OPENCLAW_UPSTREAM_HOST:-host.docker.internal}"
+      OPENCLAW_UPSTREAM_PORT: "${OPENCLAW_UPSTREAM_PORT:-18789}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

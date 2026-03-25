@@ -1,7 +1,7 @@
 {
   "name": "markos-ui",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Agent Operating System UI for OpenClaw — Build, Monitor, and Orchestrate AI Agents Visually",
   "license": "MIT",
   "homepage": "https://github.com/mktt-ai-global/MarkOS-UI",
@@ -32,7 +32,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "check": "npm run lint && npm run test && npm run build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d --build",
+    "package:release": "bash ./scripts/package-release.sh"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

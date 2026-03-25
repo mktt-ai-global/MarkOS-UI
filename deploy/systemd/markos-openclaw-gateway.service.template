@@ -1,0 +1,15 @@
+[Unit]
+Description=MarkOS OpenClaw Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=__SERVICE_USER__
+WorkingDirectory=__WORKING_DIR__
+ExecStart=/usr/bin/env openclaw gateway
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

@@ -5,6 +5,7 @@ node_modules
 dist
 dist-ssr
 release
+deploy/generated
 
 # Editor & OS
 *.local
@@ -18,6 +19,8 @@ release
 test-results/
 *.tgz
 *.zip
+.env
+.env.*
 
 # Claude
 .claude/

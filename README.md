@@ -1,53 +1,156 @@
 <div align="center">
   <h1>MarkOS UI</h1>
-  <p><strong>The visual control plane for OpenClaw-powered agent systems.</strong></p>
-  <p>Build, monitor, and orchestrate AI agents from a polished dashboard that works with both live gateway snapshots and offline mock data.</p>
-  <p>一个开箱可用、适合展示与扩展的 AI Agent 可视化操作台。</p>
+  <p><strong>A visual control plane for OpenClaw-powered agent systems.</strong></p>
+  <p>Build, monitor, and orchestrate AI agents from a polished dashboard with live gateway connectivity, offline fallback, and one-click deployment flows.</p>
 
   <p>
     <a href="https://github.com/mktt-ai-global/MarkOS-UI/stargazers"><img src="https://img.shields.io/github/stars/mktt-ai-global/MarkOS-UI?style=flat" alt="GitHub stars" /></a>
     <a href="https://github.com/mktt-ai-global/MarkOS-UI/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mktt-ai-global/MarkOS-UI" alt="License" /></a>
     <img src="https://img.shields.io/badge/checks-local%20passing-2ea44f" alt="Local checks passing" />
-    <img src="https://img.shields.io/badge/React-19-149eca" alt="React 19" />
-    <img src="https://img.shields.io/badge/Vite-8-7c5cff" alt="Vite 8" />
-    <img src="https://img.shields.io/badge/Node-%3E%3D22-3c873a" alt="Node 22+" />
+    <img src="https://img.shields.io/badge/One--Click-Local%20%7C%20VPS%20%7C%20Docker-149eca" alt="One-click modes" />
+    <img src="https://img.shields.io/badge/HTTPS-Let's%20Encrypt%20auto--renew-3c873a" alt="HTTPS auto-renew" />
   </p>
 </div>
 
 ![MarkOS UI dashboard preview](./docs/preview-dashboard.png)
 
-## Why MarkOS UI
+## One-Click Install
+
+### Local preview
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/mktt-ai-global/MarkOS-UI/main/install.sh)
+```
+
+The installer opens an interactive menu and lets you choose:
+
+- local preview mode
+- host and UI port
+- OpenClaw gateway port
+- whether to bootstrap OpenClaw for live mode
+
+### VPS production deploy
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/mktt-ai-global/MarkOS-UI/main/install.sh) --mode vps --domain ai.example.com --email ops@example.com
+```
+
+VPS mode is designed for public deployment and will:
+
+- build the frontend
+- configure Nginx as a reverse proxy
+- proxy `/ws`, `/v1`, and `/tools` to OpenClaw
+- install a systemd service for the OpenClaw gateway
+- issue a Let's Encrypt certificate
+- enable `certbot.timer` for automatic certificate renewal
+
+If you use interactive mode, the installer also includes built-in prompts for domain and port configuration.
+
+### Docker deploy
+
+```bash
+docker compose up -d --build
+```
+
+Or:
+
+```bash
+./install.sh --mode docker
+```
+
+Docker mode exposes the UI on a configurable host port and proxies API and WebSocket traffic to an upstream OpenClaw gateway.
+
+## Why It Feels Different
 
 Most agent runtimes are powerful but invisible. MarkOS UI makes them operable.
 
-It turns your OpenClaw gateway into a dashboard-first experience with live system visibility, template-driven agent creation, session previews, device oversight, approvals scaffolding, and a UI language that already feels product-ready on desktop and mobile.
+Instead of forcing users into a pile of config files and shell history, it gives them a product-grade operator surface for:
+
+- live gateway visibility
+- agent and skill browsing
+- template-driven workflows
+- chat and cron previews
+- device and approval scaffolding
+- polished desktop and mobile layouts
 
 The goal is simple: make agent infrastructure feel as understandable as modern cloud ops.
 
-## What You Get
+## Core Features
 
-- **Live dashboard with graceful fallback**: monitor nodes, sessions, skills, gateway health, and derived metrics, even when the gateway is offline.
-- **Agent workspace**: browse agent state, inspect activity, and build reusable local agent templates with questionnaire-driven flows.
-- **Skill studio**: manage skill templates, import structured files, and prepare reusable skill packs before wiring runtime install actions.
-- **Chat console**: inspect session history, start offline sessions from templates, draft session overrides, and preview live monitor behavior.
-- **Cron preview**: model scheduled jobs, toggle runs locally, and validate schedule drafts before binding to a real gateway.
-- **Device and approval surfaces**: ship a complete UI shell for trusted devices and human approval queues with live-readiness in mind.
-- **Template import/export pipeline**: import `.md`, `.txt`, `.json`, `.yaml`, `.yml`, or `.rtf`, generate artifacts, export packs, and re-import with questionnaire state.
-- **Release-friendly frontend stack**: React 19, TypeScript, Vite 8, Tailwind CSS 4, Recharts, Framer Motion, and a polished frosted-glass interface.
+- **Dashboard with graceful fallback**: monitor nodes, sessions, skills, gateway health, and derived activity metrics even when the gateway is offline.
+- **Agent workspace**: browse agents, inspect runtime visibility, and create reusable local agent templates from structured questionnaires.
+- **Skill studio**: import files, build skill templates, preview artifacts, and prepare runtime-ready packs.
+- **Chat console**: inspect sessions, launch offline template-based conversations, and prepare local session override drafts.
+- **Cron preview**: model scheduled jobs and local run history before enabling live runtime writes.
+- **Devices and approvals**: ship a ready product shell for trusted-device management and human approval flows.
+- **Template import pipeline**: supports `.md`, `.txt`, `.json`, `.yaml`, `.yml`, and `.rtf`.
+- **Responsive UI**: built for both desktop operations and mobile browsing.
 
-## Release Status
+## Install Modes
 
-This release is ready for GitHub publishing and team adoption as a UI project.
+| Mode | Best For | What It Does |
+| --- | --- | --- |
+| `local` | Laptop demo, product review, local testing | Builds the app, optionally starts OpenClaw, and runs a local preview server |
+| `vps` | Public domain deployment | Builds the app, configures Nginx, installs a gateway service, enables HTTPS auto-renew |
+| `docker` | Fast container-based startup | Builds a container image and serves the app with Nginx |
+| `config` | Infra teams and manual rollout | Generates Nginx and systemd config files without modifying the host |
 
-- `npm run check` passes locally.
-- The app is production-buildable and deployable as a static frontend.
-- Mock fallback is built in, so the full product surface is explorable without a live gateway.
-- Runtime-changing actions that depend on exact OpenClaw RPC contracts remain intentionally gated until validated against a real local gateway.
-- A ready-to-enable GitHub Actions workflow template is included at `docs/github-actions-ci.yml.example`.
+## Built-In Domain And Port Configuration
 
-That means MarkOS UI is already strong as a product showcase, internal control panel, or frontend foundation for a richer agent platform.
+The new installer includes an interactive menu with configurable deployment inputs:
 
-## Quick Start
+- `Domain`
+- `Host`
+- `UI port`
+- `Gateway port`
+- `HTTP port`
+- `HTTPS port`
+- `Install directory`
+- `Docker upstream host`
+
+For production HTTPS with automatic Let's Encrypt renewal, the installer normalizes to ports `80/443`, because that is the most reliable setup for certificate issuance and renewal.
+
+## CLI Examples
+
+### Local mode with custom ports
+
+```bash
+./install.sh --mode local --host 0.0.0.0 --ui-port 5000 --gateway-port 19000
+```
+
+### VPS mode with domain and TLS
+
+```bash
+./install.sh --mode vps --domain ai.example.com --email ops@example.com --gateway-port 18789
+```
+
+### Docker mode with custom host port
+
+```bash
+./install.sh --mode docker --ui-port 8080 --gateway-port 18789 --docker-upstream-host host.docker.internal
+```
+
+### Generate deployment config only
+
+```bash
+./install.sh --mode config --domain ai.example.com --install-dir /srv/markos-ui
+```
+
+## Docker Configuration
+
+`docker-compose.yml` supports these environment variables:
+
+- `MARKOS_UI_PORT`
+- `OPENCLAW_UPSTREAM_HOST`
+- `OPENCLAW_UPSTREAM_PORT`
+
+Example:
+
+```bash
+MARKOS_UI_PORT=8080 OPENCLAW_UPSTREAM_HOST=host.docker.internal OPENCLAW_UPSTREAM_PORT=18789 docker compose up -d --build
+```
+
+## Local Development
 
 ```bash
 git clone https://github.com/mktt-ai-global/MarkOS-UI.git
@@ -58,26 +161,18 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173)
 
-## One-Command Install
+## Scripts
 
 ```bash
-./install.sh
-```
-
-The installer:
-
-1. Verifies Node.js and npm
-2. Detects or installs OpenClaw
-3. Runs onboarding when needed
-4. Installs locked UI dependencies
-5. Builds the production bundle
-6. Starts the gateway if needed
-7. Serves the UI with `vite preview`
-
-For VPS deployment guidance:
-
-```bash
-./install.sh --deploy-guide
+npm run dev
+npm run lint
+npm run test
+npm run build
+npm run check
+npm run preview
+npm run docker:build
+npm run docker:up
+npm run package:release
 ```
 
 ## Architecture
@@ -91,17 +186,9 @@ flowchart LR
   GW --> AP["Approvals + Config"]
 ```
 
-When a live gateway is available, MarkOS UI reads snapshots and events from OpenClaw. When it is not, the app falls back to local mock data and browser-persisted drafts so work on UI flows, templates, and product reviews never blocks on infrastructure.
+When OpenClaw is online, the UI reads live snapshots and events. When it is not, MarkOS UI falls back to local mock data and browser-persisted drafts so product reviews and template workflows never block on infrastructure readiness.
 
-## Experience Highlights
-
-- **Dashboard-first UX** with clean cards, charts, and density tuned for operators rather than demos.
-- **Responsive layout** with desktop sidebar navigation and mobile-friendly bottom navigation behavior.
-- **Theme support** with Frost and Midnight modes.
-- **Error boundary and notification system** for safer runtime behavior and clearer operator feedback.
-- **Template-first workflows** that make the product useful before every backend mutation path is finalized.
-
-## Tech Stack
+## Stack
 
 | Layer | Technology |
 | --- | --- |
@@ -111,7 +198,7 @@ When a live gateway is available, MarkOS UI reads snapshots and events from Open
 | Routing | React Router 7 |
 | Charts | Recharts 3 |
 | Motion | Framer Motion |
-| Quality | ESLint + Node test runner |
+| Runtime packaging | Nginx + Docker Compose + systemd |
 
 ## Project Structure
 
@@ -120,27 +207,18 @@ src/pages        Route-level product surfaces
 src/components   Shared UI building blocks
 src/lib          Gateway client, adapters, storage, template helpers
 src/hooks        Gateway-facing React hooks
-tests            Local logic coverage for adapters, storage, and template flows
-public           Static assets
+deploy           Nginx and systemd templates
+docker           Container runtime configuration
+scripts          Release packaging helpers
+tests            Local logic coverage
 ```
 
-## Scripts
+## Release Notes
 
-```bash
-npm run dev        # Start the Vite dev server
-npm run lint       # Lint the codebase
-npm run test       # Run local unit tests
-npm run build      # Typecheck and build production assets
-npm run check      # Lint + test + build
-npm run preview    # Preview the production build
-```
-
-## Roadmap
-
-- Validate live write operations against a real OpenClaw gateway
-- Replace derived UI estimates with verified backend telemetry
-- Expand approvals, devices, and runtime install flows from scaffolding to full control
-- Add deeper session analytics and agent runtime observability
+- `npm run check` passes locally.
+- `npm audit --omit=dev` passes locally.
+- `install.sh` now supports local, VPS, Docker, and config-only flows.
+- `docs/github-actions-ci.yml.example` is included as a ready-to-enable CI workflow template.
 
 ## License
 
