@@ -1,9 +1,29 @@
 {
   "name": "markos-ui",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Agent Operating System UI for OpenClaw — Build, Monitor, and Orchestrate AI Agents Visually",
   "license": "MIT",
+  "homepage": "https://github.com/mktt-ai-global/MarkOS-UI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mktt-ai-global/MarkOS-UI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mktt-ai-global/MarkOS-UI/issues"
+  },
+  "keywords": [
+    "agent-os",
+    "agent-ui",
+    "ai-agents",
+    "openclaw",
+    "react",
+    "vite",
+    "orchestration"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

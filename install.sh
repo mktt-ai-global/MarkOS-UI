@@ -13,6 +13,27 @@
 
 set -euo pipefail
 
+install_ui_dependencies() {
+  if [ -f package-lock.json ]; then
+    npm ci
+  else
+    npm install
+  fi
+}
+
+gateway_ready() {
+  local url
+  for url in \
+    "http://127.0.0.1:${GATEWAY_PORT}/health" \
+    "http://127.0.0.1:${GATEWAY_PORT}/v1/health" \
+    "http://127.0.0.1:${GATEWAY_PORT}"; do
+    if curl -fsS --max-time 2 "$url" > /dev/null 2>&1; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 # --- Deploy guide (--deploy-guide) ---
 deploy_guide() {
   cat <<'GUIDE'
@@ -149,12 +170,14 @@ echo -e "${GREEN}✓ npm $(npm -v)${NC}"
 echo ""
 echo -e "${BLUE}[2/6]${NC} Checking OpenClaw installation..."
 
+OPENCLAW_NPM_SPEC="${OPENCLAW_NPM_SPEC:-openclaw@latest}"
+
 if command -v openclaw &> /dev/null; then
   OPENCLAW_VER=$(openclaw --version 2>/dev/null || echo "unknown")
   echo -e "${GREEN}✓ OpenClaw found: $OPENCLAW_VER${NC}"
 else
   echo -e "${YELLOW}OpenClaw not found. Installing...${NC}"
-  npm install -g openclaw@latest
+  npm install -g "$OPENCLAW_NPM_SPEC"
   echo -e "${GREEN}✓ OpenClaw installed${NC}"
 fi
 
@@ -179,7 +202,7 @@ echo -e "${BLUE}[4/6]${NC} Installing Web Control UI dependencies..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-npm install
+install_ui_dependencies
 echo -e "${GREEN}✓ Dependencies installed${NC}"
 
 # --- Step 5: Build the UI ---
@@ -196,7 +219,7 @@ echo -e "${BLUE}[6/6]${NC} Starting services..."
 # Check if gateway is running
 GATEWAY_PORT="${OPENCLAW_GATEWAY_PORT:-18789}"
 
-if curl -s "http://127.0.0.1:$GATEWAY_PORT" > /dev/null 2>&1; then
+if gateway_ready; then
   echo -e "${GREEN}✓ OpenClaw gateway already running on port $GATEWAY_PORT${NC}"
 else
   echo -e "${YELLOW}Starting OpenClaw gateway...${NC}"
@@ -204,7 +227,7 @@ else
   GATEWAY_PID=$!
   sleep 3
 
-  if curl -s "http://127.0.0.1:$GATEWAY_PORT" > /dev/null 2>&1; then
+  if gateway_ready; then
     echo -e "${GREEN}✓ Gateway started (PID: $GATEWAY_PID)${NC}"
   else
     echo -e "${YELLOW}⚠ Gateway may still be starting. Check: openclaw status${NC}"

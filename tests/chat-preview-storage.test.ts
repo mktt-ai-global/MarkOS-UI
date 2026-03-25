@@ -16,6 +16,10 @@ class MemoryStorage {
   setItem(key: string, value: string) {
     this.store.set(key, value)
   }
+
+  removeItem(key: string) {
+    this.store.delete(key)
+  }
 }
 
 function installWindowWithStorage() {

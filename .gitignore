@@ -4,6 +4,7 @@ node_modules
 # Build output
 dist
 dist-ssr
+release
 
 # Editor & OS
 *.local
@@ -14,6 +15,9 @@ dist-ssr
 .idea
 .vscode/*
 !.vscode/extensions.json
+test-results/
+*.tgz
+*.zip
 
 # Claude
 .claude/
