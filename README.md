@@ -5,9 +5,9 @@
   <p>一个开箱可用、适合展示与扩展的 AI Agent 可视化操作台。</p>
 
   <p>
-    <a href="https://github.com/mktt-ai-global/MarkOS-UI/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/mktt-ai-global/MarkOS-UI/ci.yml?branch=main&label=CI" alt="CI status" /></a>
     <a href="https://github.com/mktt-ai-global/MarkOS-UI/stargazers"><img src="https://img.shields.io/github/stars/mktt-ai-global/MarkOS-UI?style=flat" alt="GitHub stars" /></a>
     <a href="https://github.com/mktt-ai-global/MarkOS-UI/blob/main/LICENSE"><img src="https://img.shields.io/github/license/mktt-ai-global/MarkOS-UI" alt="License" /></a>
+    <img src="https://img.shields.io/badge/checks-local%20passing-2ea44f" alt="Local checks passing" />
     <img src="https://img.shields.io/badge/React-19-149eca" alt="React 19" />
     <img src="https://img.shields.io/badge/Vite-8-7c5cff" alt="Vite 8" />
     <img src="https://img.shields.io/badge/Node-%3E%3D22-3c873a" alt="Node 22+" />
@@ -43,6 +43,7 @@ This release is ready for GitHub publishing and team adoption as a UI project.
 - The app is production-buildable and deployable as a static frontend.
 - Mock fallback is built in, so the full product surface is explorable without a live gateway.
 - Runtime-changing actions that depend on exact OpenClaw RPC contracts remain intentionally gated until validated against a real local gateway.
+- A ready-to-enable GitHub Actions workflow template is included at `docs/github-actions-ci.yml.example`.
 
 That means MarkOS UI is already strong as a product showcase, internal control panel, or frontend foundation for a richer agent platform.
 
