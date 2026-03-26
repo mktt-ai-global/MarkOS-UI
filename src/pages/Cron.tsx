@@ -167,8 +167,8 @@ export default function Cron() {
   })()
   const { data: sessionsRaw } = useGatewayData<unknown>('sessions.list', {}, mockSessions, 10000)
   const { data: agentsListRaw } = useGatewayData<unknown>('agents.list', {}, { agents: mockAgents }, 15000)
-  const sessions = normalizeSessions(sessionsRaw, mockSessions)
-  const agents = normalizeAgents(agentsListRaw, sessions, mockAgents)
+  const sessions = normalizeSessions(sessionsRaw, mockSessions, isLive)
+  const agents = normalizeAgents(agentsListRaw, sessions, mockAgents, isLive)
   const agentsById = new Map(agents.map((agent) => [agent.id, agent]))
   const jobs = isLive ? cronJobs : localPreviewJobs
   const isPreviewMode = !isLive

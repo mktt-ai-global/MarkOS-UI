@@ -56,11 +56,11 @@ export default function Dashboard() {
   const { data: presenceRaw, isLive: presenceLive } = useGatewayData<unknown>('system-presence', {}, mockSystemStatus, 10000)
   const { data: agentsListRaw, isLive: agentsLive } = useGatewayData<unknown>('agents.list', {}, { agents: mockAgents }, 15000)
 
-  const sessions = normalizeSessions(sessionsRaw, mockSessions)
+  const sessions = normalizeSessions(sessionsRaw, mockSessions, sessionsLive)
   const skills = normalizeSkills(null, toolsCatalogRaw, mockSkills)
   const presence = normalizePresence(presenceRaw, sessions, skills, mockSystemStatus)
-  const devices = normalizeNodes(nodesRaw, mockNodes)
-  const agents = normalizeAgents(agentsListRaw, sessions)
+  const devices = normalizeNodes(nodesRaw, mockNodes, nodesLive)
+  const agents = normalizeAgents(agentsListRaw, sessions, mockAgents, agentsLive)
   const performanceData = buildPerformanceSeries(presence.totalAgents, presence.activeSessions, skills.length)
   const activeAgents = agents
     .filter(agent => agent.status !== 'stopped')

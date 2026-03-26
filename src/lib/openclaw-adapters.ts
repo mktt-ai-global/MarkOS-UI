@@ -210,7 +210,7 @@ function parseAgentIdFromKey(key: string): string {
   return ''
 }
 
-export function normalizeSessions(raw: unknown, fallback: ChatSession[] = mockSessions): ChatSession[] {
+export function normalizeSessions(raw: unknown, fallback: ChatSession[] = mockSessions, isLive = false): ChatSession[] {
   const items = findArray(raw, ['sessions', 'items', 'list', 'results'])
   const normalized = items
     .map((item, index) => {
@@ -252,10 +252,10 @@ export function normalizeSessions(raw: unknown, fallback: ChatSession[] = mockSe
     })
     .filter((item): item is ChatSession => item !== null)
 
-  return normalized.length > 0 ? normalized : fallback
+  return (normalized.length > 0 || isLive) ? normalized : fallback
 }
 
-export function normalizeMessages(raw: unknown, fallback: ChatMessage[] = mockMessages): ChatMessage[] {
+export function normalizeMessages(raw: unknown, fallback: ChatMessage[] = mockMessages, isLive = false): ChatMessage[] {
   const items = findArray(raw, ['messages', 'items', 'list', 'history', 'results'])
   const normalized: ChatMessage[] = []
 
@@ -291,10 +291,10 @@ export function normalizeMessages(raw: unknown, fallback: ChatMessage[] = mockMe
     })
   }
 
-  return normalized.length > 0 ? normalized : fallback
+  return (normalized.length > 0 || isLive) ? normalized : fallback
 }
 
-export function normalizeNodes(raw: unknown, fallback: DeviceNode[] = mockNodes): DeviceNode[] {
+export function normalizeNodes(raw: unknown, fallback: DeviceNode[] = mockNodes, isLive = false): DeviceNode[] {
   const items = findArray(raw, ['nodes', 'items', 'list', 'results'])
   const normalized: DeviceNode[] = []
 
@@ -318,7 +318,7 @@ export function normalizeNodes(raw: unknown, fallback: DeviceNode[] = mockNodes)
     })
   }
 
-  return normalized.length > 0 ? normalized : fallback
+  return (normalized.length > 0 || isLive) ? normalized : fallback
 }
 
 export function normalizePresence(
@@ -373,6 +373,7 @@ export function normalizeAgents(
   agentsRaw: unknown,
   sessions: ChatSession[],
   fallback: AgentInfo[] = mockAgents,
+  isLive = false,
 ): AgentInfo[] {
   // Extract known agent IDs from agents.list ({ agents: [{id}] })
   const unwrapped = unwrapValue(agentsRaw)
@@ -444,7 +445,7 @@ export function normalizeAgents(
     }
   }
 
-  return grouped.size > 0 ? Array.from(grouped.values()) : fallback
+  return (grouped.size > 0 || isLive) ? Array.from(grouped.values()) : fallback
 }
 
 export function normalizeSkills(
@@ -509,7 +510,7 @@ export function normalizeSkills(
   return byId.size > 0 ? Array.from(byId.values()) : fallback
 }
 
-export function normalizeChannels(raw: unknown, fallback: ChannelInfo[] = mockChannels): ChannelInfo[] {
+export function normalizeChannels(raw: unknown, fallback: ChannelInfo[] = mockChannels, isLive = false): ChannelInfo[] {
   const items = findArray(raw, ['channels', 'items', 'list', 'results'])
   const normalized: ChannelInfo[] = []
 
@@ -539,5 +540,5 @@ export function normalizeChannels(raw: unknown, fallback: ChannelInfo[] = mockCh
     })
   }
 
-  return normalized.length > 0 ? normalized : fallback
+  return (normalized.length > 0 || isLive) ? normalized : fallback
 }

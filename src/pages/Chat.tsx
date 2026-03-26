@@ -191,7 +191,7 @@ export default function Chat() {
   const { data: liveSessionsRaw, isLive: sessionsLive } = useGatewayData<unknown>(
     'sessions.list', {}, mockSessions, 10000
   )
-  const sessions = sessionsLive ? normalizeSessions(liveSessionsRaw, mockSessions) : offlineSessions
+  const sessions = sessionsLive ? normalizeSessions(liveSessionsRaw, mockSessions, sessionsLive) : offlineSessions
   const currentSessionKey = sessions.some(session => session.key === activeConvKey)
     ? activeConvKey
     : sessions[0]?.key || activeConvKey
@@ -202,7 +202,7 @@ export default function Chat() {
     'chat.history', { sessionKey: currentSessionKey }, offlineMessagesBySession[currentSessionKey] || []
   )
   const displayedMessages = messagesLive
-    ? normalizeMessages(messagesRaw, offlineMessagesBySession[currentSessionKey] || [])
+    ? normalizeMessages(messagesRaw, offlineMessagesBySession[currentSessionKey] || [], true)
     : (offlineMessagesBySession[currentSessionKey] || [])
   const lastMessageId = displayedMessages[displayedMessages.length - 1]?.id
   const recentToolCalls = displayedMessages.flatMap(message => message.toolCalls || []).slice(-5)

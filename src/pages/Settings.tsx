@@ -218,8 +218,8 @@ export default function Settings() {
   const { data: configRaw, isLive: configLive } = useGatewayData<unknown>('config.get', {}, mockConfigPreview)
   const { data: configSchemaRaw, isLive: configSchemaLive } = useGatewayData<unknown>('config.schema', {}, mockConfigSchemaPreview)
   const presence = normalizePresence(presenceRaw, [], [], mockSystemStatus)
-  const nodes = normalizeNodes(nodesRaw, mockNodes)
-  const channels = normalizeChannels(channelsRaw, mockChannels)
+  const nodes = normalizeNodes(nodesRaw, mockNodes, nodesLive)
+  const channels = normalizeChannels(channelsRaw, mockChannels, channelsLive)
   const isLive = presenceLive || nodesLive || channelsLive
   const previewPayload = configPreviewMode === 'config' ? configRaw : configSchemaRaw
   const previewIsLive = configPreviewMode === 'config' ? configLive : configSchemaLive

@@ -17,11 +17,11 @@ const statusStyles: Record<ApprovalRequestInfo['status'], string> = {
   denied: 'bg-danger/10 text-danger',
 }
 
-function normalizeApprovals(payload: unknown, fallback: ApprovalRequestInfo[]): ApprovalRequestInfo[] {
+function normalizeApprovals(payload: unknown, fallback: ApprovalRequestInfo[], isLive = false): ApprovalRequestInfo[] {
   // exec.approvals.get returns { file: { agents: { <agentId>: { ... } }, defaults: { ... } } }
   const record = isRecord(payload) ? payload : null
   const file = isRecord(record?.file) ? record.file : isRecord(payload) ? payload : null
-  if (!file) return fallback
+  if (!file) return isLive ? [] : fallback
 
   const agents = isRecord(file.agents) ? file.agents : {}
   const defaults = isRecord(file.defaults) ? file.defaults : {}
@@ -81,7 +81,7 @@ export default function Approvals() {
   }, [uiMessage])
   const connectionStatus = useConnectionStatus()
   const { data: approvalsRaw, isLive } = useGatewayData<unknown>('exec.approvals.get', {}, mockApprovalRequests, 15000)
-  const approvals = useMemo(() => normalizeApprovals(approvalsRaw, mockApprovalRequests), [approvalsRaw])
+  const approvals = useMemo(() => normalizeApprovals(approvalsRaw, mockApprovalRequests, isLive), [approvalsRaw, isLive])
 
   const filteredApprovals = approvals.filter((approval) => {
     const haystack = `${approval.agent} ${approval.scope} ${approval.summary} ${approval.requestedBy}`.toLowerCase()

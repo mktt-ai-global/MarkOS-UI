@@ -77,8 +77,8 @@ export default function Agents() {
   }, [actionMessage])
   const { data: sessionsRaw, isLive: sessionsLive } = useGatewayData<unknown>('sessions.list', {}, mockSessions, 10000)
   const { data: agentsListRaw, isLive: agentsLive } = useGatewayData<unknown>('agents.list', {}, { agents: mockAgents }, 15000)
-  const sessions = normalizeSessions(sessionsRaw, mockSessions)
-  const liveAgents = normalizeAgents(agentsListRaw, sessions, mockAgents)
+  const sessions = normalizeSessions(sessionsRaw, mockSessions, sessionsLive)
+  const liveAgents = normalizeAgents(agentsListRaw, sessions, mockAgents, agentsLive)
   const localDraftPreviews = localDraftAgents.map((draft) => draft.preview)
   const agents = [...localDraftPreviews, ...liveAgents.filter((agent) => !localDraftPreviews.some((draft) => draft.id === agent.id))]
   const selectedAgent = agents.find(agent => agent.id === selectedAgentId) || null
