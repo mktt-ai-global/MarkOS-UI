@@ -51,9 +51,9 @@ function InputField({ label, value, onChange, placeholder, help, error }: InputF
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className={`w-full glass-input rounded-xl px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent/20 ${error ? 'ring-2 ring-red-400' : ''}`}
+        className={`w-full glass-input rounded-xl px-3 py-2 text-sm text-text-primary outline-none focus:ring-2 focus:ring-accent/20 ${error ? 'ring-2 ring-danger/30' : ''}`}
       />
-      {error && <span className="text-[10px] text-red-500 mt-1 block">{error}</span>}
+      {error && <span className="text-[10px] text-danger mt-1 block">{error}</span>}
       {help && !error && <span className="text-[10px] text-text-tertiary mt-1 block">{help}</span>}
     </label>
   )
