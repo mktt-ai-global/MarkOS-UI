@@ -32,7 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           <div className="glass-strong rounded-2xl p-8 max-w-lg w-full text-center space-y-5 animate-fade-in">
             {/* Error icon */}
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center mx-auto shadow-lg">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-lg" style={{ background: 'linear-gradient(135deg, var(--color-danger), color-mix(in srgb, var(--color-danger) 70%, #000))' }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />

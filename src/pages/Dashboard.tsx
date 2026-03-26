@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Server,
   Smartphone,
@@ -39,6 +39,16 @@ function BarIndicator({ value, color = 'bg-accent' }: { value: number; color?: s
 }
 
 export default function Dashboard() {
+  const themeColors = useMemo(() => {
+    const style = typeof document !== 'undefined' ? getComputedStyle(document.documentElement) : null
+    return {
+      accent: style?.getPropertyValue('--color-accent').trim() || '#6366f1',
+      success: style?.getPropertyValue('--color-success').trim() || '#34c759',
+      tertiary: style?.getPropertyValue('--color-text-tertiary').trim() || '#aeaeb2',
+      glassBg: style?.getPropertyValue('--color-glass-bg').trim() || 'rgba(255,255,255,0.8)',
+      glassBorder: style?.getPropertyValue('--color-glass-border').trim() || 'rgba(255,255,255,0.4)',
+    }
+  }, [])
   const [nodeFilter, setNodeFilter] = useState<'all' | 'online'>('all')
   const { data: nodesRaw, isLive: nodesLive } = useGatewayData<unknown>('node.list', {}, mockNodes, 15000)
   const { data: sessionsRaw, isLive: sessionsLive } = useGatewayData<unknown>('sessions.list', {}, mockSessions, 10000)
@@ -76,7 +86,7 @@ export default function Dashboard() {
   const activeChats = sessions.slice(0, 3).map((session, index) => ({
     id: session.id,
     label: session.agent.slice(0, 2).toUpperCase(),
-    color: ['from-blue-400 to-blue-500', 'from-green-400 to-green-500', 'from-amber-400 to-orange-500'][index % 3],
+    color: ['from-[var(--color-accent)] to-[var(--color-accent-light)]', 'from-[var(--color-success)] to-[var(--color-info)]', 'from-[var(--color-warning)] to-[var(--color-danger)]'][index % 3],
     task: session.title,
     progress: Math.min(100, Math.round((session.contextTokens / Math.max(session.totalTokens, 1)) * 100)),
   }))
@@ -124,6 +134,8 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2 mb-2">
                     {d.type === 'server' ? (
                       <Server size={14} className="text-accent" />
+                    ) : d.type === 'mobile' ? (
+                      <Smartphone size={14} className="text-accent" />
                     ) : (
                       <HardDrive size={14} className="text-accent" />
                     )}
@@ -192,19 +204,19 @@ export default function Dashboard() {
                 <AreaChart data={performanceData}>
                   <defs>
                     <linearGradient id="agentGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                      <stop offset="0%" stopColor={themeColors.accent} stopOpacity={0.3} />
+                      <stop offset="100%" stopColor={themeColors.accent} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="tokenGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#34c759" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#34c759" stopOpacity={0} />
+                      <stop offset="0%" stopColor={themeColors.success} stopOpacity={0.2} />
+                      <stop offset="100%" stopColor={themeColors.success} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#aeaeb2' }} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: themeColors.tertiary }} />
                   <YAxis hide />
-                  <Tooltip contentStyle={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 12, fontSize: 11 }} />
-                  <Area type="monotone" dataKey="agents" stroke="#6366f1" strokeWidth={2} fill="url(#agentGrad)" />
-                  <Area type="monotone" dataKey="tokens" stroke="#34c759" strokeWidth={1.5} fill="url(#tokenGrad)" />
+                  <Tooltip contentStyle={{ background: themeColors.glassBg, backdropFilter: 'blur(20px)', border: `1px solid ${themeColors.glassBorder}`, borderRadius: 12, fontSize: 11 }} />
+                  <Area type="monotone" dataKey="agents" stroke={themeColors.accent} strokeWidth={2} fill="url(#agentGrad)" />
+                  <Area type="monotone" dataKey="tokens" stroke={themeColors.success} strokeWidth={1.5} fill="url(#tokenGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -276,7 +288,7 @@ export default function Dashboard() {
                   <div className="w-32 h-8 hidden sm:block flex-shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={agent.activity}>
-                        <Bar dataKey="v" fill="#6366f1" opacity={0.4} radius={[2, 2, 0, 0]} />
+                        <Bar dataKey="v" fill={themeColors.accent} opacity={0.4} radius={[2, 2, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

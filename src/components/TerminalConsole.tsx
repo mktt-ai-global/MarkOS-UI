@@ -4,7 +4,10 @@ import { useConnectionStatus, useOpenClawEvent } from '../hooks/useOpenClaw'
 import { openclawClient } from '../lib/openclaw-client'
 import { mockTerminalLogs } from '../lib/mock-data'
 
+let logIdCounter = 0
+
 interface LogEntry {
+  id: number
   time: string
   level: 'info' | 'debug' | 'warn' | 'error'
   msg: string
@@ -18,18 +21,17 @@ const levelColors: Record<string, string> = {
 }
 
 interface Props {
-  open: boolean
   onClose: () => void
 }
 
-export default function TerminalConsole({ open, onClose }: Props) {
+export default function TerminalConsole({ onClose }: Props) {
   const [minimized, setMinimized] = useState(false)
-  const [logs, setLogs] = useState<LogEntry[]>(mockTerminalLogs)
+  const [logs, setLogs] = useState<LogEntry[]>(() => mockTerminalLogs.map(l => ({ ...l, id: ++logIdCounter })))
   const [filter, setFilter] = useState<string>('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const status = useConnectionStatus()
-  const pushLog = useCallback((entry: LogEntry) => {
-    setLogs(prev => [...prev.slice(-500), entry])
+  const pushLog = useCallback((entry: Omit<LogEntry, 'id'>) => {
+    setLogs(prev => [...prev.slice(-500), { ...entry, id: ++logIdCounter }])
   }, [])
 
   // Listen for real-time events and append to logs
@@ -44,10 +46,10 @@ export default function TerminalConsole({ open, onClose }: Props) {
 
   // Auto-scroll
   useEffect(() => {
-    if (open && !minimized) {
+    if (!minimized) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [logs, open, minimized])
+  }, [logs, minimized])
 
   // Add connection status changes as log entries
   useEffect(() => {
@@ -64,8 +66,6 @@ export default function TerminalConsole({ open, onClose }: Props) {
   const filteredLogs = filter
     ? logs.filter(l => l.msg.toLowerCase().includes(filter.toLowerCase()) || l.level === filter)
     : logs
-
-  if (!open) return null
 
   return (
     <div className={`fixed bottom-0 left-0 md:left-[72px] right-0 z-50 transition-all duration-300 ${minimized ? 'h-10' : 'h-72'}`}>
@@ -102,8 +102,8 @@ export default function TerminalConsole({ open, onClose }: Props) {
 
         {!minimized && (
           <div className="flex-1 overflow-y-auto px-4 py-2 font-mono text-[11px] space-y-0.5">
-            {filteredLogs.map((log, i) => (
-              <div key={i} className="flex gap-2">
+            {filteredLogs.map((log) => (
+              <div key={log.id} className="flex gap-2">
                 <span className="text-text-tertiary/60 flex-shrink-0">{log.time}</span>
                 <span className={`flex-shrink-0 w-12 ${levelColors[log.level]}`}>[{log.level}]</span>
                 <span className="text-text-secondary break-all">{log.msg}</span>

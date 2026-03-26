@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Settings2,
   Key,
@@ -15,10 +15,13 @@ import {
   Wifi,
   Copy,
   RotateCcw,
+  ChevronDown,
+  X,
 } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import { useGatewayData, useConnectionStatus } from '../hooks/useOpenClaw'
 import { copyTextToClipboard } from '../lib/clipboard'
+import { isRecord } from '../lib/utils'
 import { normalizeChannels, normalizeNodes, normalizePresence } from '../lib/openclaw-adapters'
 import { mockChannels, mockNodes, mockSystemStatus } from '../lib/mock-data'
 import { openclawClient, type GatewayErrorDetails } from '../lib/openclaw-client'
@@ -32,8 +35,6 @@ import {
 } from '../lib/settings-draft'
 
 type SettingsTab = 'general' | 'connection' | 'security' | 'about'
-
-type UnknownRecord = Record<string, unknown>
 
 const mockConfigPreview = {
   gateway: {
@@ -81,10 +82,6 @@ const tabs: { id: SettingsTab; label: string; icon: typeof Settings2 }[] = [
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'about', label: 'About', icon: Info },
 ]
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 function extractGatewayPort(url: string, fallbackPort: number): string {
   try {
@@ -177,6 +174,7 @@ function buildGatewayGuidance(error: GatewayErrorDetails | null, isLoopbackGatew
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [configPreviewMode, setConfigPreviewMode] = useState<'config' | 'schema'>('config')
+  const [configPreviewOpen, setConfigPreviewOpen] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [configDraft, setConfigDraft] = useState<Record<string, DraftFieldValue>>({})
   const [configDraftDirty, setConfigDraftDirty] = useState(false)
@@ -187,6 +185,13 @@ export default function Settings() {
     type: 'success' | 'error' | 'info'
     text: string
   } | null>(null)
+  const dismissRef = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (dismissRef.current) clearTimeout(dismissRef.current)
+    if (!settingsMessage) return
+    dismissRef.current = setTimeout(() => setSettingsMessage(null), 4000)
+    return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
+  }, [settingsMessage])
   const connectionStatus = useConnectionStatus()
   const { data: presenceRaw, isLive: presenceLive } = useGatewayData<unknown>('system-presence', {}, mockSystemStatus, 10000)
   const { data: nodesRaw, isLive: nodesLive } = useGatewayData<unknown>('node.list', {}, mockNodes, 15000)
@@ -356,14 +361,15 @@ export default function Settings() {
         {/* Right: Content */}
         <div className="flex-1 space-y-4">
           {settingsMessage && (
-            <div className={`rounded-xl px-3 py-2 text-xs ${
+            <div className={`rounded-xl px-3 py-2 text-xs flex items-start gap-2 ${
               settingsMessage.type === 'success'
                 ? 'bg-success/10 text-success'
                 : settingsMessage.type === 'error'
                   ? 'bg-danger/10 text-danger'
                   : 'bg-info/10 text-info'
             }`}>
-              {settingsMessage.text}
+              <span className="flex-1">{settingsMessage.text}</span>
+              <button onClick={() => setSettingsMessage(null)} className="flex-shrink-0 hover:opacity-70 transition-opacity"><X size={14} /></button>
             </div>
           )}
 
@@ -568,36 +574,54 @@ export default function Settings() {
                 title="Gateway Config Preview"
                 subtitle="Live gateway configuration"
                 action={(
-                  <div className="flex items-center gap-1 p-1 glass rounded-xl">
-                    {[
-                      { id: 'config', label: 'Current' },
-                      { id: 'schema', label: 'Schema' },
-                    ].map(({ id, label }) => (
-                      <button
-                        key={id}
-                        onClick={() => setConfigPreviewMode(id as 'config' | 'schema')}
-                        className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
-                          configPreviewMode === id
-                            ? 'bg-[var(--color-glass-bg)] text-text-primary shadow-sm'
-                            : 'text-text-secondary hover:text-text-primary'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setConfigPreviewOpen((prev) => !prev)}
+                      className="flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-medium text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      <ChevronDown size={14} className={`transition-transform ${configPreviewOpen ? 'rotate-180' : ''}`} />
+                      {configPreviewOpen ? 'Collapse' : 'Expand'}
+                    </button>
+                    {configPreviewOpen && (
+                      <div className="flex items-center gap-1 p-1 glass rounded-xl">
+                        {[
+                          { id: 'config', label: 'Current' },
+                          { id: 'schema', label: 'Schema' },
+                        ].map(({ id, label }) => (
+                          <button
+                            key={id}
+                            onClick={() => setConfigPreviewMode(id as 'config' | 'schema')}
+                            className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                              configPreviewMode === id
+                                ? 'bg-[var(--color-glass-bg)] text-text-primary shadow-sm'
+                                : 'text-text-secondary hover:text-text-primary'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               >
-                <div className="space-y-3">
-                  <div className={`rounded-xl px-3 py-2 text-xs ${previewIsLive ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
-                    {previewIsLive
-                      ? `Showing live ${configPreviewMode} payload from the gateway.`
-                      : `Showing mock ${configPreviewMode} payload until a real OpenClaw gateway responds.`}
+                {configPreviewOpen && (
+                  <div className="space-y-3">
+                    <div className={`rounded-xl px-3 py-2 text-xs ${previewIsLive ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                      {previewIsLive
+                        ? `Showing live ${configPreviewMode} payload from the gateway.`
+                        : `Showing mock ${configPreviewMode} payload until a real OpenClaw gateway responds.`}
+                    </div>
+                    <pre className="glass-subtle rounded-xl p-3 text-[11px] text-text-primary overflow-x-auto whitespace-pre-wrap break-all">
+                      {previewJson}
+                    </pre>
                   </div>
-                  <pre className="glass-subtle rounded-xl p-3 text-[11px] text-text-primary overflow-x-auto whitespace-pre-wrap break-all">
-                    {previewJson}
-                  </pre>
-                </div>
+                )}
+                {!configPreviewOpen && (
+                  <div className="text-xs text-text-tertiary">
+                    Click Expand to view the raw gateway config or schema payload.
+                  </div>
+                )}
               </GlassCard>
 
               <GlassCard title="API Keys">

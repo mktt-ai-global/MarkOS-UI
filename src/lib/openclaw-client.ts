@@ -157,21 +157,29 @@ class OpenClawClient {
   }
 
   private getOrCreateDeviceId(): string {
-    let id = localStorage.getItem(DEVICE_ID_KEY)
-    if (!id) {
-      id = `web-${crypto.randomUUID()}`
-      localStorage.setItem(DEVICE_ID_KEY, id)
+    try {
+      let id = localStorage.getItem(DEVICE_ID_KEY)
+      if (!id) {
+        id = `web-${crypto.randomUUID()}`
+        localStorage.setItem(DEVICE_ID_KEY, id)
+      }
+      return id
+    } catch {
+      return `web-${crypto.randomUUID()}`
     }
-    return id
   }
 
   private getOrCreateClientInstanceId(): string {
-    let id = sessionStorage.getItem(CLIENT_INSTANCE_ID_KEY)
-    if (!id) {
-      id = crypto.randomUUID()
-      sessionStorage.setItem(CLIENT_INSTANCE_ID_KEY, id)
+    try {
+      let id = sessionStorage.getItem(CLIENT_INSTANCE_ID_KEY)
+      if (!id) {
+        id = crypto.randomUUID()
+        sessionStorage.setItem(CLIENT_INSTANCE_ID_KEY, id)
+      }
+      return id
+    } catch {
+      return crypto.randomUUID()
     }
-    return id
   }
 
   getConnectionStatus(): ConnectionStatus {
@@ -897,6 +905,8 @@ class OpenClawClient {
       this.ws = null
     }
     this.password = ''
+    this.setLastError(null)
+    this.setLastErrorDetails(null)
     this.setStatus('disconnected')
   }
 }

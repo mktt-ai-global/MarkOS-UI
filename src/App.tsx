@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import TerminalConsole from './components/TerminalConsole'
@@ -206,6 +206,13 @@ export default function App() {
               <Route path="/devices" element={<Devices />} />
               <Route path="/approvals" element={<Approvals />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={
+                <div className="min-h-[360px] flex flex-col items-center justify-center gap-4 animate-fade-in">
+                  <div className="text-6xl font-bold text-text-tertiary">404</div>
+                  <p className="text-sm text-text-secondary">This page does not exist.</p>
+                  <Link to="/" className="text-xs text-accent hover:underline">Back to Dashboard</Link>
+                </div>
+              } />
             </Routes>
           </Suspense>
         </main>
@@ -223,7 +230,7 @@ export default function App() {
         </button>
       </div>
 
-      {terminalOpen && <TerminalConsole open={terminalOpen} onClose={() => setTerminalOpen(false)} />}
+      {terminalOpen && <TerminalConsole onClose={() => setTerminalOpen(false)} />}
       <NotificationToast notifications={notifications} onDismiss={dismissNotification} />
     </div>
     </ErrorBoundary>

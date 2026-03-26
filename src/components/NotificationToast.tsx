@@ -1,4 +1,4 @@
-import { CheckCircle, AlertTriangle, Info, X } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Info, X, XCircle } from 'lucide-react'
 
 export interface Notification {
   id: string
@@ -11,7 +11,7 @@ const icons = {
   success: CheckCircle,
   warning: AlertTriangle,
   info: Info,
-  error: AlertTriangle,
+  error: XCircle,
 }
 
 const colors = {

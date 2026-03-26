@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Plus,
   Play,
@@ -12,6 +12,7 @@ import {
   Search,
   Bot,
   PencilLine,
+  X,
 } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import { useGatewayData, useGatewayAction } from '../hooks/useOpenClaw'
@@ -27,6 +28,7 @@ import {
   upsertCronPreviewJob,
   validateCronPreviewDraft,
 } from '../lib/cron-preview'
+import { canUseStorage, isRecord } from '../lib/utils'
 import { mockCronJobs, mockAgents, mockSessions, type CronJob } from '../lib/mock-data'
 
 const statusStyles: Record<string, string> = {
@@ -38,14 +40,6 @@ const statusStyles: Record<string, string> = {
 const CRON_PREVIEW_JOBS_KEY = 'openclaw_ui_cron_preview_jobs_v1'
 const CRON_PREVIEW_MESSAGES_KEY = 'openclaw_ui_cron_preview_messages_v1'
 const CRON_PREVIEW_RUN_HISTORY_KEY = 'openclaw_ui_cron_preview_run_history_v1'
-
-function canUseStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 function asStr(v: unknown, fb = ''): string { return typeof v === 'string' ? v : fb }
 
@@ -121,6 +115,13 @@ export default function Cron() {
     type: 'success' | 'error' | 'info'
     text: string
   } | null>(null)
+  const dismissRef = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (dismissRef.current) clearTimeout(dismissRef.current)
+    if (!actionMessage) return
+    dismissRef.current = setTimeout(() => setActionMessage(null), 4000)
+    return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
+  }, [actionMessage])
   const [localPreviewJobs, setLocalPreviewJobs] = useState<CronJob[]>(() => loadStoredValue(
     CRON_PREVIEW_JOBS_KEY,
     mockCronJobs,
@@ -396,14 +397,15 @@ export default function Cron() {
       </div>
 
       {(actionMessage || actionError) && (
-        <div className={`rounded-xl px-3 py-2 text-xs ${
+        <div className={`rounded-xl px-3 py-2 text-xs flex items-start gap-2 ${
           actionError || actionMessage?.type === 'error'
             ? 'bg-danger/10 text-danger'
             : actionMessage?.type === 'success'
               ? 'bg-success/10 text-success'
               : 'bg-info/10 text-info'
         }`}>
-          {actionError || actionMessage?.text}
+          <span className="flex-1">{actionError || actionMessage?.text}</span>
+          <button onClick={() => setActionMessage(null)} className="flex-shrink-0 hover:opacity-70 transition-opacity"><X size={14} /></button>
         </div>
       )}
 

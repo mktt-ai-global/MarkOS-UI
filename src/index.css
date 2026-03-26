@@ -136,6 +136,7 @@ html[data-ui-theme='midnight'] ::-webkit-scrollbar-thumb:hover { background: rgb
   .text-info { color: var(--color-info); }
   .bg-success { background-color: var(--color-success); }
   .bg-warning { background-color: var(--color-warning); }
+  .bg-danger { background-color: var(--color-danger); }
   .bg-info { background-color: var(--color-info); }
 
   .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }

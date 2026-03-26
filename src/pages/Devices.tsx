@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
-import { CheckCircle2, Laptop, Search, ShieldCheck, ShieldX, Smartphone, Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { CheckCircle2, Laptop, Search, ShieldCheck, ShieldX, Smartphone, Trash2, X } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
+import { isRecord } from '../lib/utils'
 import { useConnectionStatus, useGatewayData } from '../hooks/useOpenClaw'
 import { mockDevices, type BrowserDeviceInfo } from '../lib/mock-data'
 
@@ -8,10 +9,6 @@ const trustStyles: Record<BrowserDeviceInfo['trust'], string> = {
   paired: 'bg-success/10 text-success',
   pending: 'bg-warning/10 text-warning',
   revoked: 'bg-danger/10 text-danger',
-}
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
 function asString(v: unknown, fb = ''): string {
@@ -64,6 +61,13 @@ function normalizeDevices(payload: unknown, fallback: BrowserDeviceInfo[]): Brow
 export default function Devices() {
   const [searchQuery, setSearchQuery] = useState('')
   const [uiMessage, setUiMessage] = useState<string | null>(null)
+  const dismissRef = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (dismissRef.current) clearTimeout(dismissRef.current)
+    if (!uiMessage) return
+    dismissRef.current = setTimeout(() => setUiMessage(null), 4000)
+    return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
+  }, [uiMessage])
   const connectionStatus = useConnectionStatus()
   const { data: devicesRaw, isLive } = useGatewayData<unknown>('device.pair.list', {}, mockDevices, 15000)
   const devices = useMemo(() => normalizeDevices(devicesRaw, mockDevices), [devicesRaw])
@@ -103,8 +107,9 @@ export default function Devices() {
 
 
       {uiMessage && (
-        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info">
-          {uiMessage}
+        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info flex items-start gap-2">
+          <span className="flex-1">{uiMessage}</span>
+          <button onClick={() => setUiMessage(null)} className="flex-shrink-0 hover:opacity-70 transition-opacity"><X size={14} /></button>
         </div>
       )}
 

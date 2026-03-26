@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import {
   Send, Plus, Search, MoreHorizontal, Bot, User, Sparkles,
   ArrowRight, Paperclip, Copy, Eye,
-  Square, Trash2, ChevronDown, ChevronUp,
+  Square, Trash2, ChevronDown, ChevronUp, X,
 } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import { useGatewayData, useGatewayAction, useConnectionStatus, useOpenClawEvent } from '../hooks/useOpenClaw'
 import { copyTextToClipboard } from '../lib/clipboard'
+import { isRecord, splitLines } from '../lib/utils'
 import { normalizeMessages, normalizeSessions } from '../lib/openclaw-adapters'
 import { mockSessions, type ChatSession, type ChatMessage } from '../lib/mock-data'
 import { openclawClient } from '../lib/openclaw-client'
@@ -25,8 +26,6 @@ import {
   type SessionOverrideDraft,
 } from '../lib/chat-preview-storage'
 
-type UnknownRecord = Record<string, unknown>
-
 function nextLocalMessageId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `local-${crypto.randomUUID()}`
@@ -40,17 +39,6 @@ function createTimestamp(): string {
 
 function toPreview(content: string): string {
   return content.replace(/\s+/g, ' ').trim().slice(0, 72) || 'No messages yet'
-}
-
-function splitLines(value: string): string[] {
-  return value
-    .split('\n')
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function createSessionOverrideDraft(session?: ChatSession): SessionOverrideDraft {
@@ -178,6 +166,13 @@ export default function Chat() {
   const [showOverrideEditor, setShowOverrideEditor] = useState(false)
   const [showSessionPanel, setShowSessionPanel] = useState(false)
   const [uiMessage, setUiMessage] = useState<string | null>(null)
+  const dismissRef = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (dismissRef.current) clearTimeout(dismissRef.current)
+    if (!uiMessage) return
+    dismissRef.current = setTimeout(() => setUiMessage(null), 4000)
+    return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
+  }, [uiMessage])
   const [offlineSessions, setOfflineSessions] = useState<ChatSession[]>(() => initialChatPreviewState.offlineSessions)
   const [offlineMessagesBySession, setOfflineMessagesBySession] = useState<Record<string, ChatMessage[]>>(() => initialChatPreviewState.offlineMessagesBySession)
   const [localAgentTemplates, setLocalAgentTemplates] = useState<LocalAgentDraft[]>(() => loadAgentDrafts())
@@ -752,8 +747,9 @@ export default function Chat() {
         </div>
 
         {uiMessage && (
-          <div className="mx-4 md:mx-5 mt-3 rounded-xl px-3 py-2 text-xs bg-info/10 text-info">
-            {uiMessage}
+          <div className="mx-4 md:mx-5 mt-3 rounded-xl px-3 py-2 text-xs bg-info/10 text-info flex items-start gap-2">
+            <span className="flex-1">{uiMessage}</span>
+            <button onClick={() => setUiMessage(null)} className="flex-shrink-0 hover:opacity-70 transition-opacity"><X size={14} /></button>
           </div>
         )}
 
@@ -1070,7 +1066,7 @@ export default function Chat() {
                 msg.role === 'user'
                   ? 'bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-light)]'
                   : msg.role === 'system'
-                    ? 'bg-gradient-to-br from-slate-400/20 to-slate-500/20'
+                    ? 'bg-gradient-to-br from-[var(--color-text-tertiary)]/20 to-[var(--color-text-secondary)]/20'
                     : 'bg-gradient-to-br from-accent/15 to-accent-light/15'
               }`}>
                 {msg.role === 'user'
@@ -1085,7 +1081,7 @@ export default function Chat() {
                   msg.role === 'user'
                     ? 'bg-accent text-white rounded-tr-sm'
                     : msg.role === 'system'
-                      ? 'bg-slate-500/10 border border-slate-400/15 rounded-tl-sm text-text-primary'
+                      ? 'glass-subtle border border-[var(--color-glass-border-subtle)] rounded-tl-sm text-text-primary'
                       : 'glass-strong rounded-tl-sm text-text-primary'
                 }`}>
                   {msg.role === 'system' && (
@@ -1194,13 +1190,13 @@ export default function Chat() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
-                    handleSend()
+                    void handleSend()
                   }
                 }}
               />
             </div>
             <button
-              onClick={handleSend}
+              onClick={() => void handleSend()}
               disabled={!inputValue.trim()}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0 shadow-sm ${
                 inputValue.trim()

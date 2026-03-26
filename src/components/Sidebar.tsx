@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import {
   LayoutDashboard,
   Bot,
@@ -26,9 +26,9 @@ export default function Sidebar() {
     <>
       {/* Desktop: Left sidebar */}
       <aside className="glass-sidebar fixed left-0 top-0 bottom-0 z-50 w-[72px] hidden md:flex flex-col items-center py-6 gap-2">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-light)] flex items-center justify-center mb-6 shadow-md">
+        <Link to="/settings" title="Customize branding in Settings" className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-light)] flex items-center justify-center mb-6 shadow-md hover:shadow-lg hover:scale-105 transition-all">
           <span className="text-white font-bold text-sm">OC</span>
-        </div>
+        </Link>
         <nav role="navigation" aria-label="Main navigation" className="flex flex-col gap-1 flex-1">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink

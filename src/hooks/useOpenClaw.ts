@@ -53,6 +53,8 @@ export function useGatewayData<T>(
   const status = useConnectionStatus()
   const paramsKey = stableSerialize(params)
   const requestVersionRef = useRef(0)
+  const mockDataRef = useRef(mockData)
+  mockDataRef.current = mockData
 
   const execute = useCallback(async () => {
     const requestVersion = requestVersionRef.current + 1
@@ -62,7 +64,7 @@ export function useGatewayData<T>(
     if (status !== 'connected') {
       if (!isLatestRequest()) return
       setError(null)
-      setData(mockData)
+      setData(mockDataRef.current)
       setIsLive(false)
       setLoading(false)
       return
@@ -80,14 +82,14 @@ export function useGatewayData<T>(
     } catch (e) {
       if (!isLatestRequest()) return
       setError(e instanceof Error ? e.message : 'RPC error')
-      setData(mockData)
+      setData(mockDataRef.current)
       setIsLive(false)
     } finally {
       if (isLatestRequest()) {
         setLoading(false)
       }
     }
-  }, [method, status, paramsKey, mockData])
+  }, [method, status, paramsKey])
 
   useEffect(() => {
     execute()

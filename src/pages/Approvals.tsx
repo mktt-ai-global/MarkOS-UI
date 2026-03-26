@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Clock3, Search, ShieldAlert, XCircle } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { AlertTriangle, CheckCircle2, Clock3, Search, ShieldAlert, X, XCircle } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
+import { isRecord } from '../lib/utils'
 import { useConnectionStatus, useGatewayData } from '../hooks/useOpenClaw'
 import { mockApprovalRequests, type ApprovalRequestInfo } from '../lib/mock-data'
 
@@ -14,10 +15,6 @@ const statusStyles: Record<ApprovalRequestInfo['status'], string> = {
   pending: 'bg-warning/10 text-warning',
   approved: 'bg-success/10 text-success',
   denied: 'bg-danger/10 text-danger',
-}
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
 function normalizeApprovals(payload: unknown, fallback: ApprovalRequestInfo[]): ApprovalRequestInfo[] {
@@ -75,6 +72,13 @@ function normalizeApprovals(payload: unknown, fallback: ApprovalRequestInfo[]): 
 export default function Approvals() {
   const [searchQuery, setSearchQuery] = useState('')
   const [uiMessage, setUiMessage] = useState<string | null>(null)
+  const dismissRef = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (dismissRef.current) clearTimeout(dismissRef.current)
+    if (!uiMessage) return
+    dismissRef.current = setTimeout(() => setUiMessage(null), 4000)
+    return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
+  }, [uiMessage])
   const connectionStatus = useConnectionStatus()
   const { data: approvalsRaw, isLive } = useGatewayData<unknown>('exec.approvals.get', {}, mockApprovalRequests, 15000)
   const approvals = useMemo(() => normalizeApprovals(approvalsRaw, mockApprovalRequests), [approvalsRaw])
@@ -114,8 +118,9 @@ export default function Approvals() {
 
 
       {uiMessage && (
-        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info">
-          {uiMessage}
+        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info flex items-start gap-2">
+          <span className="flex-1">{uiMessage}</span>
+          <button onClick={() => setUiMessage(null)} className="flex-shrink-0 hover:opacity-70 transition-opacity"><X size={14} /></button>
         </div>
       )}
 

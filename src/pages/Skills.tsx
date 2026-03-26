@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Check,
   PencilLine,
@@ -23,6 +23,7 @@ import GlassCard from '../components/GlassCard'
 import TemplateStudio from '../components/TemplateStudio'
 import { normalizeSkills } from '../lib/openclaw-adapters'
 import { useGatewayData } from '../hooks/useOpenClaw'
+import { splitLines } from '../lib/utils'
 import { mockSkills, type SkillInfo } from '../lib/mock-data'
 import {
   loadAgentDrafts,
@@ -44,13 +45,6 @@ const categoryStyles: Record<string, string> = {
   system: 'bg-success/10 text-success',
 }
 
-function splitLines(value: string): string[] {
-  return value
-    .split('\n')
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
 export default function Skills() {
   const [tab, setTab] = useState<'store' | 'custom' | 'deps'>('store')
   const [searchQuery, setSearchQuery] = useState('')
@@ -63,6 +57,13 @@ export default function Skills() {
   const [localAgentDrafts, setLocalAgentDrafts] = useState<LocalAgentDraft[]>(() => loadAgentDrafts())
   const [localDraftSkills, setLocalDraftSkills] = useState<LocalSkillDraft[]>(() => loadSkillDrafts())
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const dismissRef = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (dismissRef.current) clearTimeout(dismissRef.current)
+    if (!actionMessage) return
+    dismissRef.current = setTimeout(() => setActionMessage(null), 4000)
+    return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
+  }, [actionMessage])
   const { data: toolsCatalogRaw, isLive: toolsCatalogLive } = useGatewayData<unknown>('tools.catalog', {}, mockSkills, 15000)
   const liveSkills = normalizeSkills(null, toolsCatalogRaw, mockSkills)
   const localDraftPreviews = localDraftSkills.map((draft) => draft.preview)
@@ -211,8 +212,9 @@ export default function Skills() {
       </div>
 
       {actionMessage && (
-        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info">
-          {actionMessage}
+        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info flex items-start gap-2">
+          <span className="flex-1">{actionMessage}</span>
+          <button onClick={() => setActionMessage(null)} className="flex-shrink-0 hover:opacity-70 transition-opacity"><X size={14} /></button>
         </div>
       )}
 
@@ -441,7 +443,7 @@ export default function Skills() {
                 <Package size={16} className="text-accent" />
                 <div className="flex-1">
                   <div className="text-xs font-medium text-text-primary">{dep.name}</div>
-                  <div className="text-[10px] text-text-tertiary">v{dep.version}</div>
+                  <div className="text-[10px] text-text-tertiary">{dep.version}</div>
                 </div>
                 <span className="text-[10px] text-text-tertiary">{dep.size}</span>
                 <span className={`w-2 h-2 rounded-full ${dep.status === 'ok' ? 'bg-success' : 'bg-warning'}`} />

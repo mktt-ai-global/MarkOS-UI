@@ -76,7 +76,7 @@ export default function TopBar({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchDropdownRef = useRef<HTMLDivElement>(null)
   const notificationsRef = useRef<HTMLDivElement>(null)
-  const pageName = pageNames[location.pathname] || 'Dashboard'
+  const pageName = pageNames[location.pathname] || (location.pathname === '/' ? 'Dashboard' : 'Not Found')
   const { data: presenceRaw } = useGatewayData<unknown>('system-presence', {}, mockSystemStatus, 10000)
   const presence = normalizePresence(presenceRaw, [], [], mockSystemStatus)
 

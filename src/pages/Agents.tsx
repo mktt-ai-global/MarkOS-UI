@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bot,
   Check,
@@ -20,6 +20,7 @@ import GlassCard from '../components/GlassCard'
 import TemplateStudio from '../components/TemplateStudio'
 import { buildAgentPerformanceSeries, normalizeAgents, normalizeSessions } from '../lib/openclaw-adapters'
 import { useGatewayData } from '../hooks/useOpenClaw'
+import { splitLines } from '../lib/utils'
 import { mockAgents, mockSessions, type AgentInfo } from '../lib/mock-data'
 import {
   loadAgentDrafts,
@@ -47,14 +48,15 @@ const statusDot: Record<string, string> = {
   stopped: 'bg-text-tertiary',
 }
 
-function splitLines(value: string): string[] {
-  return value
-    .split('\n')
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
 export default function Agents() {
+  const themeColors = useMemo(() => {
+    const style = typeof document !== 'undefined' ? getComputedStyle(document.documentElement) : null
+    return {
+      accent: style?.getPropertyValue('--color-accent').trim() || '#6366f1',
+      glassBg: style?.getPropertyValue('--color-glass-bg').trim() || 'rgba(255,255,255,0.8)',
+      glassBorder: style?.getPropertyValue('--color-glass-border').trim() || 'rgba(255,255,255,0.4)',
+    }
+  }, [])
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -66,6 +68,13 @@ export default function Agents() {
   const [localDraftAgents, setLocalDraftAgents] = useState<LocalAgentDraft[]>(() => loadAgentDrafts())
   const [localSkillDrafts, setLocalSkillDrafts] = useState<LocalSkillDraft[]>(() => loadSkillDrafts())
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const dismissRef = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (dismissRef.current) clearTimeout(dismissRef.current)
+    if (!actionMessage) return
+    dismissRef.current = setTimeout(() => setActionMessage(null), 4000)
+    return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
+  }, [actionMessage])
   const { data: sessionsRaw, isLive: sessionsLive } = useGatewayData<unknown>('sessions.list', {}, mockSessions, 10000)
   const { data: agentsListRaw, isLive: agentsLive } = useGatewayData<unknown>('agents.list', {}, { agents: mockAgents }, 15000)
   const sessions = normalizeSessions(sessionsRaw, mockSessions)
@@ -222,8 +231,9 @@ export default function Agents() {
       )}
 
       {actionMessage && (
-        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info">
-          {actionMessage}
+        <div className="rounded-xl px-3 py-2 text-xs bg-info/10 text-info flex items-start gap-2">
+          <span className="flex-1">{actionMessage}</span>
+          <button onClick={() => setActionMessage(null)} className="flex-shrink-0 hover:opacity-70 transition-opacity"><X size={14} /></button>
         </div>
       )}
 
@@ -496,22 +506,22 @@ export default function Agents() {
                   <AreaChart data={perfData}>
                     <defs>
                       <linearGradient id="perfGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                        <stop offset="0%" stopColor={themeColors.accent} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={themeColors.accent} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="d" hide />
                     <YAxis hide />
                     <Tooltip
                       contentStyle={{
-                        background: 'rgba(255,255,255,0.8)',
+                        background: themeColors.glassBg,
                         backdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255,255,255,0.4)',
+                        border: `1px solid ${themeColors.glassBorder}`,
                         borderRadius: 12,
                         fontSize: 11,
                       }}
                     />
-                    <Area type="monotone" dataKey="calls" stroke="#6366f1" strokeWidth={2} fill="url(#perfGrad)" />
+                    <Area type="monotone" dataKey="calls" stroke={themeColors.accent} strokeWidth={2} fill="url(#perfGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
