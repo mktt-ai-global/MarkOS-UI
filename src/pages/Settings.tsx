@@ -508,25 +508,23 @@ export default function Settings() {
                   ) : (
                     <>
                       {/* Section tabs */}
-                      <div className="flex gap-1.5 overflow-x-auto pb-1">
+                      <div className="flex flex-wrap gap-1 pb-1">
                         {configSections.map((section) => {
-                          const sectionFields = configDraftFields.filter((f) => f.section === section)
                           const sectionChanges = draftAnalysis.changes.filter((c) => c.field.section === section).length
                           const isActive = activeDraftSection === section || (!activeDraftSection && section === configSections[0])
                           return (
                             <button
                               key={section}
                               onClick={() => setActiveDraftSection(section)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
+                              className={`relative px-2 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap transition-colors ${
                                 isActive
                                   ? 'bg-[var(--color-glass-bg)] shadow-sm text-text-primary'
-                                  : 'text-text-secondary hover:text-text-primary hover:bg-[var(--color-glass-hover)]'
+                                  : 'text-text-tertiary hover:text-text-secondary'
                               }`}
                             >
                               {section}
-                              <span className="text-[9px] text-text-tertiary">{sectionFields.length}</span>
                               {sectionChanges > 0 && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
+                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-accent" />
                               )}
                             </button>
                           )

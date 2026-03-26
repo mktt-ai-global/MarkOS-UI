@@ -34,14 +34,14 @@ function mapDevice(value: Record<string, unknown>, trust: BrowserDeviceInfo['tru
   return { id, label, platform: `${deviceFamily} / ${platform}`, trust, origin: clientId || 'Unknown', lastSeen: approvedAt, authMode }
 }
 
-function normalizeDevices(payload: unknown, fallback: BrowserDeviceInfo[]): BrowserDeviceInfo[] {
+function normalizeDevices(payload: unknown, fallback: BrowserDeviceInfo[], isLive: boolean): BrowserDeviceInfo[] {
   // device.pair.list returns { pending: [...], paired: [...] }
   const record = isRecord(payload) ? payload : null
-  if (!record) {
-    // Legacy array fallback
-    if (Array.isArray(payload) && payload.length > 0) return fallback
-    return fallback
-  }
+  if (!record) return isLive ? [] : fallback
+
+  const hasPairedKey = 'paired' in record
+  const hasPendingKey = 'pending' in record
+  if (!hasPairedKey && !hasPendingKey) return isLive ? [] : fallback
 
   const results: BrowserDeviceInfo[] = []
   for (const item of (Array.isArray(record.paired) ? record.paired : [])) {
@@ -55,7 +55,7 @@ function normalizeDevices(payload: unknown, fallback: BrowserDeviceInfo[]): Brow
     if (d) results.push(d)
   }
 
-  return results.length > 0 ? results : fallback
+  return results
 }
 
 export default function Devices() {
@@ -70,7 +70,7 @@ export default function Devices() {
   }, [uiMessage])
   const connectionStatus = useConnectionStatus()
   const { data: devicesRaw, isLive } = useGatewayData<unknown>('device.pair.list', {}, mockDevices, 15000)
-  const devices = useMemo(() => normalizeDevices(devicesRaw, mockDevices), [devicesRaw])
+  const devices = useMemo(() => normalizeDevices(devicesRaw, mockDevices, isLive), [devicesRaw, isLive])
 
   const filteredDevices = devices.filter((device) => {
     const haystack = `${device.label} ${device.id} ${device.origin}`.toLowerCase()

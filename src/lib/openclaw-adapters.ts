@@ -484,6 +484,7 @@ export function normalizeSkills(
   const catalogUnwrapped = unwrapValue(toolsCatalogRaw)
   const catalogRecord = isRecord(catalogUnwrapped) ? catalogUnwrapped : null
   const catalogGroups = catalogRecord ? findArray(catalogRecord, ['groups']) : []
+  const isLiveCatalog = catalogRecord !== null && 'groups' in catalogRecord
 
   if (catalogGroups.length > 0) {
     for (const group of catalogGroups) {
@@ -491,13 +492,11 @@ export function normalizeSkills(
       const groupLabel = asString(getValue(group, ['label', 'name']), '')
       for (const tool of toArray(group.tools)) {
         if (!isRecord(tool)) continue
-        // Inject group label as category hint
         const enriched = { ...tool, _groupLabel: groupLabel }
         mergeSkill(enriched as UnknownRecord, true)
       }
     }
-  } else {
-    // Fallback: flat array format
+  } else if (!isLiveCatalog) {
     for (const item of findArray(toolsCatalogRaw, ['tools', 'items', 'list', 'catalog'])) {
       if (isRecord(item)) {
         mergeSkill(item, false)
@@ -505,6 +504,8 @@ export function normalizeSkills(
     }
   }
 
+  // If we received a live response (has groups key), trust the result even if empty
+  if (isLiveCatalog) return Array.from(byId.values())
   return byId.size > 0 ? Array.from(byId.values()) : fallback
 }
 
