@@ -138,8 +138,9 @@ export function parseDraftValue(field: DraftField, value: DraftFieldValue): unkn
 
   if (field.kind === 'number') {
     const text = typeof value === 'string' ? value.trim() : ''
-    if (!text) return Number.NaN
-    return Number(text)
+    if (!text) return undefined
+    const parsed = Number(text)
+    return Number.isFinite(parsed) ? parsed : Number.NaN
   }
 
   if (field.kind === 'string-list') {
@@ -204,10 +205,12 @@ export function analyzeConfigDraft(
     const currentValue = getNestedValue(configObject, field.path.split('.'))
     const nextValue = parseDraftValue(field, draftValue)
 
-    if (field.kind === 'number' && (typeof nextValue !== 'number' || Number.isNaN(nextValue))) {
+    if (field.kind === 'number' && typeof nextValue === 'number' && Number.isNaN(nextValue)) {
       invalidFields.push(field)
       continue
     }
+
+    if (nextValue === undefined) continue
 
     if (valuesEqual(currentValue, nextValue)) continue
 

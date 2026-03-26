@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
-import { useGatewayData, useConnectionStatus } from '../hooks/useOpenClaw'
+import { useGatewayData, useGatewayAction, useConnectionStatus } from '../hooks/useOpenClaw'
 import { copyTextToClipboard } from '../lib/clipboard'
 import { isRecord } from '../lib/utils'
 import { normalizeChannels, normalizeNodes, normalizePresence } from '../lib/openclaw-adapters'
@@ -71,6 +71,23 @@ const mockConfigSchemaPreview = {
       properties: {
         defaultModel: { type: 'string' },
         workspace: { type: 'string' },
+      },
+    },
+    channels: {
+      type: 'object',
+      properties: {
+        whatsapp: {
+          type: 'object',
+          properties: {
+            enabled: { type: 'boolean', description: 'Enable WhatsApp channel' },
+          },
+        },
+        telegram: {
+          type: 'object',
+          properties: {
+            enabled: { type: 'boolean', description: 'Enable Telegram channel' },
+          },
+        },
       },
     },
   },
@@ -193,6 +210,7 @@ export default function Settings() {
     return () => { if (dismissRef.current) clearTimeout(dismissRef.current) }
   }, [settingsMessage])
   const connectionStatus = useConnectionStatus()
+  const { execute: rpcAction, loading: isApplying } = useGatewayAction()
   const { data: presenceRaw, isLive: presenceLive } = useGatewayData<unknown>('system-presence', {}, mockSystemStatus, 10000)
   const { data: nodesRaw, isLive: nodesLive } = useGatewayData<unknown>('node.list', {}, mockNodes, 15000)
   const { data: channelsRaw, isLive: channelsLive } = useGatewayData<unknown>('channels.status', {}, mockChannels, 15000)
@@ -214,6 +232,10 @@ export default function Settings() {
     () => buildInitialDraftValues(configDraftFields, configObject),
     [configDraftFields, configObject],
   )
+  const [draftBaselineKey, setDraftBaselineKey] = useState(() => JSON.stringify(initialDraftValues))
+  const currentBaselineKey = JSON.stringify(initialDraftValues)
+  const configStaleWarning = configDraftDirty && draftBaselineKey !== currentBaselineKey
+
   const effectiveConfigDraft = useMemo(
     () => (configDraftDirty ? { ...initialDraftValues, ...configDraft } : initialDraftValues),
     [configDraft, configDraftDirty, initialDraftValues],
@@ -279,6 +301,7 @@ export default function Settings() {
   const handleResetDraft = () => {
     setConfigDraftDirty(false)
     setConfigDraft({})
+    setDraftBaselineKey(currentBaselineKey)
     setSettingsMessage({
       type: 'info',
       text: 'Reset the config draft back to the latest snapshot from config.get.',
@@ -309,23 +332,33 @@ export default function Settings() {
     })
   }
 
-  const handlePrepareApply = () => {
+  const handleApplyPatch = async () => {
     if (!canCopyPatch) {
       setSettingsMessage({
         type: 'info',
         text: draftAnalysis.invalidFields.length > 0
-          ? 'This draft still contains invalid values. Fix them before preparing a gateway patch.'
+          ? 'This draft still contains invalid values. Fix them before applying.'
           : 'No config changes are pending in the current draft.',
       })
       return
     }
 
-    setSettingsMessage({
-      type: 'info',
-      text: configLive
-        ? 'Patch payload prepared. Runtime apply stays gated until we verify config.patch / config.apply against a real OpenClaw gateway.'
-        : 'Patch payload prepared from mock config data. Runtime apply will stay gated until a real gateway responds.',
-    })
+    if (connectionStatus !== 'connected') {
+      setSettingsMessage({
+        type: 'info',
+        text: 'Not connected to a gateway. Connect first, then apply the patch.',
+      })
+      return
+    }
+
+    const result = await rpcAction('config.apply', { patch: draftAnalysis.patch })
+    if (result !== null) {
+      setSettingsMessage({ type: 'success', text: 'Config patch applied successfully.' })
+      setConfigDraftDirty(false)
+      setConfigDraft({})
+    } else {
+      setSettingsMessage({ type: 'error', text: 'Failed to apply the config patch. Check the gateway logs.' })
+    }
   }
 
   return (
@@ -419,9 +452,18 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className={`rounded-xl px-3 py-2 text-xs ${(configLive && configSchemaLive) ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
                     {(configLive && configSchemaLive)
-                      ? 'Editing against a live config/schema snapshot. Patch application still stays gated for safety.'
+                      ? 'Editing against a live config/schema snapshot.'
                       : 'Editing against mock config/schema data until a real OpenClaw gateway responds.'}
                   </div>
+
+                  {configStaleWarning && (
+                    <div className="rounded-xl px-3 py-2 text-xs bg-warning/10 text-warning flex items-center justify-between gap-2">
+                      <span>The gateway config was refreshed while you have unsaved draft changes. Reset the draft to pick up the latest values, or continue editing.</span>
+                      <button onClick={() => setDraftBaselineKey(currentBaselineKey)} className="opacity-60 hover:opacity-100 transition-opacity flex-shrink-0">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
 
                   {configDraftFields.length === 0 ? (
                     <div className="rounded-xl px-3 py-2 text-xs bg-warning/10 text-warning">
@@ -531,7 +573,7 @@ export default function Settings() {
                             <div>
                               <div className="text-xs font-semibold text-text-primary">Patch Preview</div>
                               <div className="text-[10px] text-text-tertiary mt-0.5">
-                                Generated nested payload for `config.patch`
+                                Generated nested payload for `config.apply`
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -557,11 +599,12 @@ export default function Settings() {
                           </pre>
 
                           <button
-                            onClick={handlePrepareApply}
-                            className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white text-xs font-medium hover:bg-accent-light transition-colors"
+                            onClick={() => void handleApplyPatch()}
+                            disabled={!canCopyPatch || isApplying}
+                            className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white text-xs font-medium hover:bg-accent-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             <Save size={14} />
-                            Prepare Patch For Apply
+                            {isApplying ? 'Applying...' : connectionStatus === 'connected' ? 'Apply Patch' : 'Apply Patch (connect first)'}
                           </button>
                         </div>
                       </div>
