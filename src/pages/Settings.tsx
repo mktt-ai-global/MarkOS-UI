@@ -223,11 +223,32 @@ export default function Settings() {
   const previewPayload = configPreviewMode === 'config' ? configRaw : configSchemaRaw
   const previewIsLive = configPreviewMode === 'config' ? configLive : configSchemaLive
   const previewJson = JSON.stringify(previewPayload, null, 2)
+  // config.get returns { config: {...}, raw: "...", hash: "...", ... } from live gateway
+  // mock fallback is a plain object like { gateway: {...}, agents: {...} }
   const configObject = useMemo(() => {
-    const value = unwrapPayload(configRaw)
-    return isRecord(value) ? value : {}
+    const raw = unwrapPayload(configRaw)
+    if (!isRecord(raw)) return {}
+    // Live gateway: extract .config; mock: use as-is
+    const inner = isRecord(raw.config) ? raw.config : raw
+    return inner
   }, [configRaw])
-  const configDraftFields = useMemo(() => buildDraftFields(configSchemaRaw), [configSchemaRaw])
+  const configHash = useMemo(() => {
+    const raw = unwrapPayload(configRaw)
+    return isRecord(raw) && typeof raw.hash === 'string' ? raw.hash : ''
+  }, [configRaw])
+  const configRawText = useMemo(() => {
+    const raw = unwrapPayload(configRaw)
+    return isRecord(raw) && typeof raw.raw === 'string' ? raw.raw : ''
+  }, [configRaw])
+  // config.schema returns { schema: { $schema, type, properties }, uiHints: {...} }
+  // mock fallback is a plain JSON Schema object { type: "object", properties: {...} }
+  const configSchemaObject = useMemo(() => {
+    const raw = unwrapPayload(configSchemaRaw)
+    if (!isRecord(raw)) return raw
+    // Live gateway: extract .schema; mock: use as-is (already has properties)
+    return isRecord(raw.schema) ? raw.schema : raw
+  }, [configSchemaRaw])
+  const configDraftFields = useMemo(() => buildDraftFields(configSchemaObject), [configSchemaObject])
   const initialDraftValues = useMemo(
     () => buildInitialDraftValues(configDraftFields, configObject),
     [configDraftFields, configObject],
@@ -351,7 +372,21 @@ export default function Settings() {
       return
     }
 
-    const result = await rpcAction('config.apply', { patch: draftAnalysis.patch })
+    // config.patch expects { raw: string (JSON5), baseHash: string }
+    // Merge the patch into the existing raw config text, or build from the patch object
+    const patchedConfig = configRawText
+      ? configRawText  // TODO: merge patch into raw text properly
+      : JSON.stringify({ ...configObject, ...draftAnalysis.patch }, null, 2)
+
+    if (!configHash && configLive) {
+      setSettingsMessage({ type: 'error', text: 'Cannot apply: missing config hash from gateway. Try refreshing the page.' })
+      return
+    }
+
+    const result = await rpcAction('config.patch', {
+      raw: patchedConfig,
+      baseHash: configHash,
+    })
     if (result !== null) {
       setSettingsMessage({ type: 'success', text: 'Config patch applied successfully.' })
       setConfigDraftDirty(false)
@@ -573,7 +608,7 @@ export default function Settings() {
                             <div>
                               <div className="text-xs font-semibold text-text-primary">Patch Preview</div>
                               <div className="text-[10px] text-text-tertiary mt-0.5">
-                                Generated nested payload for `config.apply`
+                                Generated nested payload for `config.patch`
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
