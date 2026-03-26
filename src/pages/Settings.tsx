@@ -192,6 +192,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [configPreviewMode, setConfigPreviewMode] = useState<'config' | 'schema'>('config')
   const [configPreviewOpen, setConfigPreviewOpen] = useState(false)
+  const [activeDraftSection, setActiveDraftSection] = useState<string | null>(null)
   const [showApiKey, setShowApiKey] = useState(false)
   const [configDraft, setConfigDraft] = useState<Record<string, DraftFieldValue>>({})
   const [configDraftDirty, setConfigDraftDirty] = useState(false)
@@ -506,19 +507,41 @@ export default function Settings() {
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                        {configSections.map((section) => (
-                          <div key={section} className="glass-subtle rounded-2xl p-4 space-y-3">
-                            <div>
-                              <div className="text-xs font-semibold text-text-primary">{section}</div>
-                              <div className="text-[10px] text-text-tertiary mt-0.5">
-                                Generated from `config.schema` and seeded from `config.get`.
-                              </div>
-                            </div>
-                            {configDraftFields.filter((field) => field.section === section).map((field) => {
+                      {/* Section tabs */}
+                      <div className="flex gap-1.5 overflow-x-auto pb-1">
+                        {configSections.map((section) => {
+                          const sectionFields = configDraftFields.filter((f) => f.section === section)
+                          const sectionChanges = draftAnalysis.changes.filter((c) => c.field.section === section).length
+                          const isActive = activeDraftSection === section || (!activeDraftSection && section === configSections[0])
+                          return (
+                            <button
+                              key={section}
+                              onClick={() => setActiveDraftSection(section)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
+                                isActive
+                                  ? 'bg-[var(--color-glass-bg)] shadow-sm text-text-primary'
+                                  : 'text-text-secondary hover:text-text-primary hover:bg-[var(--color-glass-hover)]'
+                              }`}
+                            >
+                              {section}
+                              <span className="text-[9px] text-text-tertiary">{sectionFields.length}</span>
+                              {sectionChanges > 0 && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {/* Active section fields */}
+                      {(() => {
+                        const currentSection = activeDraftSection || configSections[0]
+                        const sectionFields = configDraftFields.filter((f) => f.section === currentSection)
+                        return (
+                          <div className="glass-subtle rounded-2xl p-4 space-y-3">
+                            {sectionFields.map((field) => {
                               const fieldValue = effectiveConfigDraft[field.path]
                               const isInvalid = draftAnalysis.invalidFields.some((item) => item.path === field.path)
-
                               return (
                                 <label key={field.path} className="block">
                                   <span className="text-[11px] font-medium text-text-primary block mb-1.5">{field.label}</span>
@@ -559,89 +582,60 @@ export default function Settings() {
                                     />
                                   )}
                                   <span className="text-[10px] text-text-tertiary mt-1 block font-mono">{field.path}</span>
-                                  {field.description && (
-                                    <span className="text-[10px] text-text-tertiary mt-1 block">{field.description}</span>
-                                  )}
-                                  {isInvalid && (
-                                    <span className="text-[10px] text-danger mt-1 block">Enter a valid number before preparing the patch.</span>
-                                  )}
+                                  {field.description && <span className="text-[10px] text-text-tertiary mt-0.5 block">{field.description}</span>}
+                                  {isInvalid && <span className="text-[10px] text-danger mt-0.5 block">Enter a valid number.</span>}
                                 </label>
                               )
                             })}
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                        <div className="glass-subtle rounded-2xl p-4 space-y-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-xs font-semibold text-text-primary">Draft Diff</div>
-                              <div className="text-[10px] text-text-tertiary mt-0.5">
-                                {draftAnalysis.changes.length} changed field{draftAnalysis.changes.length === 1 ? '' : 's'}
-                              </div>
-                            </div>
-                            {configDraftDirty && (
-                              <span className="text-[10px] px-2 py-1 rounded-full bg-info/10 text-info">local draft</span>
+                            {sectionFields.length === 0 && (
+                              <div className="text-xs text-text-tertiary text-center py-4">No editable fields in this section.</div>
                             )}
                           </div>
-                          {draftAnalysis.changes.length === 0 ? (
-                            <div className="rounded-xl px-3 py-2 text-xs bg-[var(--color-glass-subtle)] text-text-secondary">
-                              No config changes yet. Update a field above to generate a patch preview.
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {draftAnalysis.changes.map(({ field, current, next }) => (
-                                <div key={field.path} className="rounded-xl bg-[var(--color-glass-subtle)] px-3 py-2 text-[11px] space-y-1">
-                                  <div className="font-medium text-text-primary">{field.label}</div>
-                                  <div className="text-text-tertiary font-mono">{field.path}</div>
-                                  <div className="text-text-secondary">Current: {formatConfigValue(current)}</div>
-                                  <div className="text-accent">Draft: {formatConfigValue(next)}</div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        )
+                      })()}
 
-                        <div className="glass-subtle rounded-2xl p-4 space-y-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-xs font-semibold text-text-primary">Patch Preview</div>
-                              <div className="text-[10px] text-text-tertiary mt-0.5">
-                                Generated nested payload for `config.patch`
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={handleResetDraft}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[var(--color-glass-subtle)] text-text-secondary text-[11px] font-medium hover:text-accent transition-colors"
-                              >
-                                <RotateCcw size={12} />
-                                Reset
-                              </button>
-                              <button
-                                onClick={handleCopyPatch}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-accent/10 text-accent text-[11px] font-medium hover:bg-accent/20 transition-colors"
-                              >
-                                <Copy size={12} />
-                                Copy
-                              </button>
-                            </div>
+                      {/* Action bar: changes summary + actions */}
+                      <div className="glass-subtle rounded-2xl p-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div className="text-xs text-text-secondary">
+                            {draftAnalysis.changes.length === 0
+                              ? 'No changes yet.'
+                              : `${draftAnalysis.changes.length} field${draftAnalysis.changes.length === 1 ? '' : 's'} changed`}
+                            {draftAnalysis.invalidFields.length > 0 && (
+                              <span className="text-danger ml-2">{draftAnalysis.invalidFields.length} invalid</span>
+                            )}
                           </div>
-
-                          <pre className="rounded-xl bg-[var(--color-code-bg)] text-[var(--color-code-text)] p-3 text-[11px] overflow-x-auto whitespace-pre-wrap break-all">
-                            {patchJson}
-                          </pre>
-
-                          <button
-                            onClick={() => void handleApplyPatch()}
-                            disabled={!canCopyPatch || isApplying}
-                            className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white text-xs font-medium hover:bg-accent-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                          >
-                            <Save size={14} />
-                            {isApplying ? 'Applying...' : connectionStatus === 'connected' ? 'Apply Patch' : 'Apply Patch (connect first)'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button onClick={handleResetDraft} className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[var(--color-glass-subtle)] text-text-secondary text-[11px] font-medium hover:text-accent transition-colors">
+                              <RotateCcw size={12} /> Reset
+                            </button>
+                            <button onClick={handleCopyPatch} className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-accent/10 text-accent text-[11px] font-medium hover:bg-accent/20 transition-colors">
+                              <Copy size={12} /> Copy JSON
+                            </button>
+                            <button
+                              onClick={() => void handleApplyPatch()}
+                              disabled={!canCopyPatch || isApplying}
+                              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-accent text-white text-[11px] font-medium hover:bg-accent-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              <Save size={12} />
+                              {isApplying ? 'Applying...' : 'Apply'}
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Compact diff — only show when there are changes */}
+                        {draftAnalysis.changes.length > 0 && (
+                          <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto">
+                            {draftAnalysis.changes.map(({ field, current, next }) => (
+                              <div key={field.path} className="flex items-center gap-3 text-[10px] px-2 py-1.5 rounded-lg bg-[var(--color-glass-subtle)]">
+                                <span className="font-mono text-text-tertiary truncate w-32 flex-shrink-0">{field.path}</span>
+                                <span className="text-text-secondary truncate">{formatConfigValue(current)}</span>
+                                <span className="text-text-tertiary flex-shrink-0">→</span>
+                                <span className="text-accent truncate">{formatConfigValue(next)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
